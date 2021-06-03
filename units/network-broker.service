@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+[Unit]
+Description=A daemon configures network upon events
+Documentation=man:networkd-broker.conf(5)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/network-broker
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
