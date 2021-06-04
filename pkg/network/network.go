@@ -8,6 +8,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/network-event-broker/pkg/conf"
@@ -21,9 +22,26 @@ type Network struct {
 
 	RoutingRulesByAddressFrom map[string]*RoutingRule
 	RoutingRulesByAddressTo   map[string]*RoutingRule
+
+	Mutex *sync.Mutex
+}
+
+func NetworkNew() *Network {
+
+	return &Network{
+		LinksByName:  make(map[string]int),
+		LinksByIndex: make(map[int]string),
+
+		RoutingRulesByAddressFrom: make(map[string]*RoutingRule),
+		RoutingRulesByAddressTo:   make(map[string]*RoutingRule),
+		Mutex:                     &sync.Mutex{},
+	}
 }
 
 func ConfigureNetwork(link string, n *Network) error {
+	n.Mutex.Lock()
+	defer n.Mutex.Unlock()
+
 	index, ok := n.LinksByName[link]
 	if !ok {
 		return errors.New("not found")
@@ -121,24 +139,6 @@ func WatchAddresses(n *Network) {
 	}
 }
 
-func DropConfiguration(n *Network, ifIndex int, address string) {
-	log.Debugf("Dropping routing rules link='%s' ifindex='%d' address='%s'", n.LinksByIndex[ifIndex], ifIndex, address)
-
-	rule, ok := n.RoutingRulesByAddressFrom[address]
-	if ok {
-		RemoveRoutingPolicyRule(rule)
-	}
-
-	delete(n.RoutingRulesByAddressFrom, address)
-
-	rule, ok = n.RoutingRulesByAddressTo[address]
-	if ok {
-		RemoveRoutingPolicyRule(rule)
-	}
-
-	delete(n.RoutingRulesByAddressTo, address)
-}
-
 func WatchLinks(n *Network) {
 	for {
 		updates := make(chan netlink.LinkUpdate)
@@ -162,15 +162,45 @@ func WatchLinks(n *Network) {
 
 			log.Infof("Received Link update: %v", updates)
 
-			if updates.Header.Type == syscall.RTM_DELLINK {
-				link := n.LinksByIndex[int(updates.Index)]
-
-				delete(n.LinksByIndex, int(updates.Index))
-				delete(n.LinksByName, link)
-			} else if updates.Header.Type == syscall.RTM_NEWLINK {
-				n.LinksByIndex[int(updates.Index)] = updates.Attrs().Name
-				n.LinksByName[updates.Attrs().Name] = int(updates.Index)
-			}
+			UpdateLink(n, updates)
 		}
 	}
+}
+
+func UpdateLink(n *Network, updates netlink.LinkUpdate) {
+	n.Mutex.Lock()
+	defer n.Mutex.Unlock()
+
+	switch updates.Header.Type {
+	case syscall.RTM_DELLINK:
+
+		delete(n.LinksByIndex, int(updates.Index))
+		delete(n.LinksByName, updates.Attrs().Name)
+
+	case syscall.RTM_NEWLINK:
+
+		n.LinksByIndex[int(updates.Index)] = updates.Attrs().Name
+		n.LinksByName[updates.Attrs().Name] = int(updates.Index)
+	}
+}
+
+func DropConfiguration(n *Network, ifIndex int, address string) {
+	n.Mutex.Lock()
+	defer n.Mutex.Unlock()
+
+	log.Debugf("Dropping routing rules link='%s' ifindex='%d' address='%s'", n.LinksByIndex[ifIndex], ifIndex, address)
+
+	rule, ok := n.RoutingRulesByAddressFrom[address]
+	if ok {
+		RemoveRoutingPolicyRule(rule)
+	}
+
+	delete(n.RoutingRulesByAddressFrom, address)
+
+	rule, ok = n.RoutingRulesByAddressTo[address]
+	if ok {
+		RemoveRoutingPolicyRule(rule)
+	}
+
+	delete(n.RoutingRulesByAddressTo, address)
 }

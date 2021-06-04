@@ -9,20 +9,13 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-
 func AcquireLinks() (*Network, error) {
 	linkList, err := netlink.LinkList()
 	if err != nil {
 		return nil, err
 	}
 
-	n := Network{
-		LinksByName:  make(map[string]int),
-		LinksByIndex: make(map[int]string),
-
-		RoutingRulesByAddressFrom: make(map[string]*RoutingRule),
-		RoutingRulesByAddressTo:   make(map[string]*RoutingRule),
-	}
+	n := NetworkNew()
 
 	log.Debugf("Acquiring link information ...")
 
@@ -37,5 +30,5 @@ func AcquireLinks() (*Network, error) {
 		log.Debugf("Acquired link='%v' ifindex='%v' from netlink message", link.Attrs().Name, link.Attrs().Index)
 	}
 
-	return &n, nil
+	return n, nil
 }
