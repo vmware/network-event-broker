@@ -38,6 +38,61 @@ func NetworkNew() *Network {
 	}
 }
 
+func IsRulesByTableEmpty(n *Network, table int) bool {
+	from := 0
+	to := 0
+
+	for _, v := range n.RoutingRulesByAddressFrom {
+		if v.Table == table {
+			from++
+		}
+	}
+
+	for _, v := range n.RoutingRulesByAddressTo {
+		if v.Table == table {
+			to++
+		}
+	}
+
+	if from == 0 && to == 0 {
+		return true
+	}
+
+	return false
+}
+
+func addOneAddressRule(n *Network, address string, link string, index int) error {
+	addr := strings.TrimSuffix(strings.SplitAfter(address, "/")[0], "/")
+
+	from := &RoutingRule{
+		From:  addr,
+		Table: ROUTE_TABLE_BASE + index,
+	}
+
+	if err := AddRoutingPolicyRule(from); err != nil {
+		return err
+	}
+
+	n.RoutingRulesByAddressFrom[address] = from
+
+	log.Debugf("Successfully added routing policy rule 'from' on link='%s' ifindex='%d' table='%d'", link, index, ROUTE_TABLE_BASE+index)
+
+	to := &RoutingRule{
+		To:    addr,
+		Table: ROUTE_TABLE_BASE + index,
+	}
+
+	if err := AddRoutingPolicyRule(to); err != nil {
+		return err
+	}
+
+	n.RoutingRulesByAddressTo[address] = to
+
+	log.Debugf("Successfully added routing policy rule 'to' on link='%s' ifindex='%d' table='%d", link, index, ROUTE_TABLE_BASE+index)
+
+	return nil
+}
+
 func ConfigureNetwork(link string, n *Network) error {
 	n.Mutex.Lock()
 	defer n.Mutex.Unlock()
@@ -74,33 +129,10 @@ func ConfigureNetwork(link string, n *Network) error {
 	log.Debugf("Successfully added default gateway='%s' on link='%s' ifindex='%d' table='%d", gw, link, index, rt.Table)
 
 	for address := range existingAddresses {
-		addr := strings.TrimSuffix(strings.SplitAfter(address, "/")[0], "/")
-
-		from := &RoutingRule{
-			From:  addr,
-			Table: ROUTE_TABLE_BASE + index,
+		err := addOneAddressRule(n, address, link, index)
+		if err != nil {
+			continue
 		}
-
-		if err := AddRoutingPolicyRule(from); err != nil {
-			return err
-		}
-
-		n.RoutingRulesByAddressFrom[address] = from
-
-		log.Debugf("Successfully added routing policy rule 'from' on link='%s' ifindex='%d' table='%d'", link, index, rt.Table)
-
-		to := &RoutingRule{
-			To:    addr,
-			Table: ROUTE_TABLE_BASE + index,
-		}
-
-		if err := AddRoutingPolicyRule(to); err != nil {
-			return err
-		}
-
-		n.RoutingRulesByAddressTo[address] = to
-
-		log.Debugf("Successfully added routing policy rule 'to' on link='%s' ifindex='%d' table='%d", link, index, rt.Table)
 	}
 
 	return nil
@@ -136,6 +168,8 @@ func WatchAddresses(n *Network) {
 
 			if updates.NewAddr {
 				log.Infof("IP address='%s' added to link ifindex='%d'", ip, updates.LinkIndex)
+
+				addOneAddressRule(n, ip, n.LinksByIndex[updates.LinkIndex], updates.LinkIndex)
 			} else {
 				log.Infof("IP address='%s' removed from link ifindex='%d'", ip, updates.LinkIndex)
 
@@ -212,8 +246,13 @@ func DropConfiguration(n *Network, ifIndex int, address string) {
 
 	rt, ok := n.RoutesByIndex[ifIndex]
 	if ok {
-		log.Debugf("Dropping GW link='%s' ifindex='%d' GW='%s' Table='%d'", n.LinksByIndex[ifIndex], ifIndex, rt.Gw, rt.Table)
-		RemoveRoute(rt)
-		delete(n.RoutesByIndex, ifIndex)
+
+		if IsRulesByTableEmpty(n, rt.Table) {
+
+			log.Debugf("Dropping GW='%s' link='%s' ifindex='%d'  Table='%d'", rt.Gw, n.LinksByIndex[ifIndex], ifIndex, rt.Table)
+
+			RemoveRoute(rt)
+			delete(n.RoutesByIndex, ifIndex)
+		}
 	}
 }
