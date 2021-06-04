@@ -13,13 +13,13 @@ const (
 	ROUTE_TABLE_BASE = 9999
 )
 
-type IPRoutingRule struct {
+type RoutingRule struct {
 	From  string
 	To    string
 	Table int
 }
 
-func AddRoutingPolicyRule(rule *IPRoutingRule) error {
+func AddRoutingPolicyRule(rule *RoutingRule) error {
 	links, err := netlink.LinkList()
 	if err != nil {
 		return nil
@@ -59,7 +59,7 @@ func AddRoutingPolicyRule(rule *IPRoutingRule) error {
 	return nil
 }
 
-func RemoveRoutingPolicyRule(rule *IPRoutingRule) error {
+func RemoveRoutingPolicyRule(rule *RoutingRule) error {
 	r := netlink.NewRule()
 	r.Table = rule.Table
 

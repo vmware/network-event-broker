@@ -9,11 +9,6 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// Links we want to configure
-type Network struct {
-	LinksByName  map[string]int
-	LinksByIndex map[int]string
-}
 
 func AcquireLinks() (*Network, error) {
 	linkList, err := netlink.LinkList()
@@ -24,9 +19,12 @@ func AcquireLinks() (*Network, error) {
 	n := Network{
 		LinksByName:  make(map[string]int),
 		LinksByIndex: make(map[int]string),
+
+		RoutingRulesByAddressFrom: make(map[string]*RoutingRule),
+		RoutingRulesByAddressTo:   make(map[string]*RoutingRule),
 	}
 
-	log.Debugf("Acquiring link information")
+	log.Debugf("Acquiring link information ...")
 
 	for _, link := range linkList {
 		if link.Attrs().Name == "lo" {

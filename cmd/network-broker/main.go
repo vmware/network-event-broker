@@ -137,7 +137,7 @@ func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) 
 		switch k {
 		case "OperationalState":
 			{
-				log.Infof("Link='%v' ifindex='%v' changed state '%s'=%s", n.LinksByIndex[index], index, k, v)
+				log.Debugf("Link='%v' ifindex='%v' changed state '%s'=%s", n.LinksByIndex[index], index, k, v)
 
 				if c.Network.Links != "" {
 					if strings.Contains(c.Network.Links, n.LinksByIndex[index]) {
@@ -148,7 +148,7 @@ func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) 
 				}
 
 				if strings.Trim(v.String(), "\"") == "routable" && strings.Contains(c.Network.RoutingPolicyRules, n.LinksByIndex[index]) {
-					network.ConfigureNetwork(n.LinksByIndex[index])
+					network.ConfigureNetwork(n.LinksByIndex[index], n)
 				}
 			}
 		}
@@ -176,7 +176,7 @@ func main() {
 
 	c, err := conf.Parse()
 	if err != nil {
-		log.Fatalf("Failed to parse configuration: %v", err)
+		log.Warnf("Failed to parse configuration: %v", err)
 	}
 
 	conn, err := dbus.ConnectSystemBus()
@@ -200,15 +200,17 @@ func main() {
 	sigChannel := make(chan *dbus.Signal, 512)
 	conn.Signal(sigChannel)
 
+	/* Refresh link information */
+	n, err := network.AcquireLinks()
+	if err != nil {
+		log.Fatalf("Failed to acquire link information. Unable to continue: %v", err)
+		os.Exit(1)
+	}
+
+	go network.WatchAddresses(n)
+	go network.WatchLinks(n)
+
 	for v := range sigChannel {
-
-		/* Refresh link information */
-		n, err := network.AcquireLinks()
-		if err != nil {
-			log.Fatalf("Failed to acquire link information. Unable to continue: %v", err)
-			os.Exit(1)
-		}
-
 		w := fmt.Sprintf("%v", v.Body[0])
 
 		if strings.HasPrefix(w, "org.freedesktop.network1.Link") {
