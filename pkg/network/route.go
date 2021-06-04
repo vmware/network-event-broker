@@ -14,7 +14,7 @@ import (
 type Route struct {
 	Table   int
 	IfIndex int
-	GW      string
+	Gw      string
 }
 
 func GetDefaultIpv4Gateway() (string, error) {
@@ -86,16 +86,28 @@ func GetIpv4Gateway(ifIndex int) (string, error) {
 	return gw, nil
 }
 
-func AddRoute(ifIndex int, table int, gateway string) error {
-	gw := net.ParseIP(gateway).To4()
-
+func AddRoute(route *Route) error {
 	rt := netlink.Route{
-		LinkIndex: ifIndex,
-		Gw:        gw,
-		Table:     table,
+		LinkIndex: route.IfIndex,
+		Gw:        net.ParseIP(route.Gw).To4(),
+		Table:     route.Table,
 	}
 
 	if err := netlink.RouteAdd(&rt); err != nil && err.Error() != "file exists" {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveRoute(route *Route) error {
+	rt := netlink.Route{
+		LinkIndex: route.IfIndex,
+		Gw:        net.ParseIP(route.Gw).To4(),
+		Table:     route.Table,
+	}
+
+	if err := netlink.RouteDel(&rt); err != nil && err.Error() != "file exists" {
 		return err
 	}
 
