@@ -7,7 +7,6 @@ package conf
 import (
 	"os"
 	"path"
-	"strings"
 
 	"github.com/network-event-broker/pkg/log"
 	"github.com/spf13/viper"
@@ -26,7 +25,8 @@ const (
 
 // Config file key value
 type Network struct {
-	Links string `mapstructure:"Links"`
+	Links              string `mapstructure:"Links"`
+	RoutingPolicyRules string `mapstructure:"RoutingPolicyRules"`
 }
 type System struct {
 	LogLevel string `mapstructure:"LogLevel"`
@@ -53,7 +53,7 @@ func createEventScriptDirs() error {
 	return nil
 }
 
-func Parse() (map[string]int, error) {
+func Parse() (*Config, error) {
 	viper.SetConfigName(ConfFile)
 	viper.AddConfigPath(ConfPath)
 
@@ -70,14 +70,11 @@ func Parse() (map[string]int, error) {
 	log.SetLevel(c.System.LogLevel)
 
 	if len(c.Network.Links) > 0 {
-		log.Infof("Parsed links '%v' from configuration", c.Network.Links)
+		log.Infof("Parsed links='%v' from configuration", c.Network.Links)
 	}
 
-	links := make(map[string]int)
-
-	s := strings.Split(c.Network.Links, " ")
-	for _, c := range s {
-		links[c] = 0
+	if len(c.Network.RoutingPolicyRules) > 0 {
+		log.Infof("Parsed RoutingPolicyRules='%v' from configuration", c.Network.Links)
 	}
 
 	if err := createEventScriptDirs(); err != nil {
@@ -85,5 +82,5 @@ func Parse() (map[string]int, error) {
 		return nil, err
 	}
 
-	return links, nil
+	return &c, nil
 }

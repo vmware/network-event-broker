@@ -6,29 +6,14 @@ package system
 
 import (
 	"bufio"
-	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// PathExists test if path exists
-func PathExists(path string) bool {
-	_, r := os.Stat(path)
-	if os.IsNotExist(r) {
-		return false
-	}
-
-	return true
-}
-
 func ReadAllScriptDirs(path string) ([]string, error) {
 	var confDirs []string
-
-	if !PathExists(path) {
-		return nil, errors.New("Failed to open script conf dir '/etc/networkd-afterburn'")
-	}
 
 	dirs, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -50,10 +35,6 @@ func ReadAllScriptDirs(path string) ([]string, error) {
 
 func ReadAllScriptInConfDir(dir string) ([]string, error) {
 	var scripts []string
-
-	if !PathExists(dir) {
-		return nil, errors.New("Failed to open script conf dir in '/etc/networkd-afterburn'")
-	}
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {

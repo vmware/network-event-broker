@@ -1,6 +1,6 @@
 ### network-event-broker
 ----
-A daemon configures network on ```systemd-networkd's``` [DBus](https://www.freedesktop.org/wiki/Software/dbus/) events. Use cases like a way to run a command when get a new ip via dhcp. As of now there is no native ```systemd-networkd``` solution for this problem. Afterburn listens to dbus signals and reacts according to the events. It's written in golang.
+A daemon configures network on ```systemd-networkd's``` [DBus](https://www.freedesktop.org/wiki/Software/dbus/) events. Use cases like a way to run a command when get a new ip via dhcp. As of now there is no native ```systemd-networkd``` solution for this problem. ```network-event-broker``` listens to dbus signals and reacts according to the events. It's written in golang.
 
 ```network-event-broker``` creates link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` and manager state dir ```manager.d``` in ```/etc/network-event-broker```. Executable scripts can be placed into directories that reflect systemd-networkd operational states, and are executed when the daemon receives the relevant event from `systemd-networkd`. See [networkctl](https://www.freedesktop.org/software/systemd/man/networkctl.html).
 
@@ -43,7 +43,12 @@ The `[Network]` section takes following Keys:
 ```bash
 Links=
 ```
-A whitespace-separated list of links for which routing policy rules would be configured per address.
+A whitespace-separated list of links whose events should be monitored. Defaults to unset.
+
+```bash
+RoutingPolicyRules=
+```
+A whitespace-separated list of links for which routing policy rules would be configured per address. Defaults to unset.
 
 
 The `[System]` section takes following Keys:
@@ -55,17 +60,19 @@ Specifies the log level. Takes one of `info`, `debug` ... Defaults to `info`.
 
 ```bash
 
-❯ sudo cat /etc/network-broker/network-broker.toml
+❯ cat /etc/network-broker/network-broker.toml
 [System]
 LogLevel="debug"
 
 [Network]
-Links="ens33 ens37"                    
+Links="ens33 ens37"
+RoutingPolicyRules="ens33 ens37"
+
 ```
 
 ```bash
 
-❯ systemctl status network-broker.service 
+❯ systemctl status network-broker.service
 ● network-broker.service - A daemon configures network upon events
      Loaded: loaded (/usr/lib/systemd/system/network-broker.service; disabled; vendor preset: disabled)
      Active: active (running) since Thu 2021-06-03 22:22:38 CEST; 3h 13min ago

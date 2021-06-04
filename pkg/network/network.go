@@ -12,21 +12,21 @@ import (
 	"github.com/network-event-broker/pkg/log"
 )
 
-func ConfigureNetwork(ifname string) error {
+func ConfigureNetwork(link string) error {
 	n, err := AcquireLinks()
 	if err != nil {
 		log.Errorf("Failed to fetch links: %+v", err)
 		return err
 	}
 
-	index, ok := n.LinksByName[ifname]
+	index, ok := n.LinksByName[link]
 	if !ok {
 		return errors.New("not found")
 	}
 
-	existingAddresses, err := GetIPv4Addresses(ifname)
+	existingAddresses, err := GetIPv4AddressesByLink(link)
 	if err != nil {
-		log.Errorf("Failed to fetch Ip addresses of link='%s' ifindex='%d': %+v", ifname, err)
+		log.Errorf("Failed to fetch Ip addresses of link='%s' ifindex='%d': %+v", link, err)
 		return err
 	}
 
@@ -38,7 +38,7 @@ func ConfigureNetwork(ifname string) error {
 		}
 
 		if err = AddRoute(index, conf.ROUTE_TABLE_BASE+index, gw); err != nil {
-			log.Warnf("Failed to add route on link='%s' ifindex='%d' gw='%s': %+v", ifname, index, gw, err)
+			log.Warnf("Failed to add route on link='%s' ifindex='%d' gw='%s': %+v", link, index, gw, err)
 		}
 
 		a := strings.TrimSuffix(strings.SplitAfter(a, "/")[0], "/")

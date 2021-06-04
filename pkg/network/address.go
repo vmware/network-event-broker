@@ -7,8 +7,8 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-func GetIPv4Addresses(ifName string) (map[string]bool, error) {
-	link, err := netlink.LinkByName(ifName)
+func GetIPv4AddressesByLink(name string) (map[string]bool, error) {
+	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return nil, err
 	}

@@ -11,6 +11,12 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+type Route struct {
+	Table   int
+	IfIndex int
+	GW      string
+}
+
 func GetDefaultIpv4Gateway() (string, error) {
 	routes, err := netlink.RouteList(nil, syscall.AF_INET)
 	if err != nil {
@@ -63,7 +69,6 @@ func GetIpv4GatewayByLink(ifIndex int) (string, error) {
 
 	return "", errors.New("not found")
 }
-
 
 func GetIpv4Gateway(ifIndex int) (string, error) {
 	gw, err := GetDefaultIpv4GatewayByLink(ifIndex)

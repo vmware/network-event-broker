@@ -118,7 +118,7 @@ func executeManagerScripts(k string, v string) error {
 	return nil
 }
 
-func processDbusLinkMessage(n *network.Network, v *dbus.Signal, links map[string]int) error {
+func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) error {
 	if !strings.HasPrefix(string(v.Path), "/org/freedesktop/network1/link/_3") {
 		return nil
 	}
@@ -132,12 +132,6 @@ func processDbusLinkMessage(n *network.Network, v *dbus.Signal, links map[string
 
 	log.Debugf("Received DBus signal from systemd-networkd for ifindex='%d' link='%s'", index, n.LinksByIndex[index])
 
-	_, ok := n.LinksByName[n.LinksByIndex[index]]
-	if !ok {
-		log.Debugf("Link='%d' ifindex='%d' not configured in configuration. Ignoring", index, n.LinksByIndex[index])
-		return nil
-	}
-
 	linkState := v.Body[1].(map[string]dbus.Variant)
 	for k, v := range linkState {
 		switch k {
@@ -145,14 +139,16 @@ func processDbusLinkMessage(n *network.Network, v *dbus.Signal, links map[string
 			{
 				log.Infof("Link='%v' ifindex='%v' changed state '%s'=%s", n.LinksByIndex[index], index, k, v)
 
-				executeLinkStateScripts(n.LinksByIndex[index], index, k, v.String())
-
-				if strings.Trim(v.String(), "\"") == "routable" {
-					_, ok := links[n.LinksByIndex[index]]
-					if ok {
-						ifname := n.LinksByIndex[index]
-						network.ConfigureNetwork(ifname)
+				if c.Network.Links != "" {
+					if strings.Contains(c.Network.Links, n.LinksByIndex[index]) {
+						executeLinkStateScripts(n.LinksByIndex[index], index, k, v.String())
 					}
+				} else {
+					executeLinkStateScripts(n.LinksByIndex[index], index, k, v.String())
+				}
+
+				if strings.Trim(v.String(), "\"") == "routable" && strings.Contains(c.Network.RoutingPolicyRules, n.LinksByIndex[index]) {
+					network.ConfigureNetwork(n.LinksByIndex[index])
 				}
 			}
 		}
@@ -161,7 +157,7 @@ func processDbusLinkMessage(n *network.Network, v *dbus.Signal, links map[string
 	return nil
 }
 
-func processDbusManagerMessage(n *network.Network, v *dbus.Signal) error {
+func processDBusManagerMessage(n *network.Network, v *dbus.Signal) error {
 	state := v.Body[1].(map[string]dbus.Variant)
 
 	for k, v := range state {
@@ -178,7 +174,7 @@ func main() {
 		log.Warnf("Failed to configure logging: %v", err)
 	}
 
-	links, err := conf.Parse()
+	c, err := conf.Parse()
 	if err != nil {
 		log.Fatalf("Failed to parse configuration: %v", err)
 	}
@@ -201,10 +197,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	c := make(chan *dbus.Signal, 512)
-	conn.Signal(c)
+	sigChannel := make(chan *dbus.Signal, 512)
+	conn.Signal(sigChannel)
 
-	for v := range c {
+	for v := range sigChannel {
 
 		/* Refresh link information */
 		n, err := network.AcquireLinks()
@@ -217,10 +213,10 @@ func main() {
 
 		if strings.HasPrefix(w, "org.freedesktop.network1.Link") {
 			log.Debugf("Received Link DBus signal from systemd-networkd'")
-			go processDbusLinkMessage(n, v, links)
+			go processDBusLinkMessage(n, v, c)
 		} else if strings.HasPrefix(w, "org.freedesktop.network1.Manager") {
 			log.Debugf("Received Manager DBus signal from systemd-networkd'")
-			go processDbusManagerMessage(n, v)
+			go processDBusManagerMessage(n, v)
 		}
 	}
 
