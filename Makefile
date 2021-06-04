@@ -10,7 +10,7 @@ SRCDIR ?= .
 help:
 	@echo "make [TARGETS...]"
 	@echo
-	@echo "This is the maintenance makefile of networkd-event-broker. The following"
+	@echo "This is the maintenance makefile of network-event-broker. The following"
 	@echo "targets are available:"
 	@echo
 	@echo "    help:               Print this usage information."
@@ -33,7 +33,7 @@ build:
 install:
 	install bin/network-broker /usr/bin/
 	install -vdm 755 /etc/network-broker
-	install -m 755 conf/network-broker.toml /network-broker
+	install -m 755 conf/network-broker.toml /etc/network-broker
 	install -m 0644 units/network-broker.service /lib/systemd/system/
 	systemctl daemon-reload
 

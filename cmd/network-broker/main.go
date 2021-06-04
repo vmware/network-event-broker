@@ -118,7 +118,7 @@ func executeManagerScripts(k string, v string) error {
 	return nil
 }
 
-func processDbusLinkMessage(n *network.Network, v *dbus.Signal) error {
+func processDbusLinkMessage(n *network.Network, v *dbus.Signal, links map[string]int) error {
 	if !strings.HasPrefix(string(v.Path), "/org/freedesktop/network1/link/_3") {
 		return nil
 	}
@@ -132,7 +132,7 @@ func processDbusLinkMessage(n *network.Network, v *dbus.Signal) error {
 
 	log.Debugf("Received DBus signal from systemd-networkd for ifindex='%d' link='%s'", index, n.LinksByIndex[index])
 
-	_, ok := n.LinksByName[n.LinksByIndex[2]]
+	_, ok := n.LinksByName[n.LinksByIndex[index]]
 	if !ok {
 		log.Debugf("Link='%d' ifindex='%d' not configured in configuration. Ignoring", index, n.LinksByIndex[index])
 		return nil
@@ -146,6 +146,14 @@ func processDbusLinkMessage(n *network.Network, v *dbus.Signal) error {
 				log.Infof("Link='%v' ifindex='%v' changed state '%s'=%s", n.LinksByIndex[index], index, k, v)
 
 				executeLinkStateScripts(n.LinksByIndex[index], index, k, v.String())
+
+				if strings.Trim(v.String(), "\"") == "routable" {
+					_, ok := links[n.LinksByIndex[index]]
+					if ok {
+						ifname := n.LinksByIndex[index]
+						network.ConfigureNetwork(ifname)
+					}
+				}
 			}
 		}
 	}
@@ -168,13 +176,11 @@ func main() {
 	err := log.Init("info")
 	if err != nil {
 		log.Warnf("Failed to configure logging: %v", err)
-		os.Exit(1)
 	}
 
-	_, err = conf.Parse()
+	links, err := conf.Parse()
 	if err != nil {
 		log.Fatalf("Failed to parse configuration: %v", err)
-		os.Exit(1)
 	}
 
 	conn, err := dbus.ConnectSystemBus()
@@ -211,7 +217,7 @@ func main() {
 
 		if strings.HasPrefix(w, "org.freedesktop.network1.Link") {
 			log.Debugf("Received Link DBus signal from systemd-networkd'")
-			go processDbusLinkMessage(n, v)
+			go processDbusLinkMessage(n, v, links)
 		} else if strings.HasPrefix(w, "org.freedesktop.network1.Manager") {
 			log.Debugf("Received Manager DBus signal from systemd-networkd'")
 			go processDbusManagerMessage(n, v)

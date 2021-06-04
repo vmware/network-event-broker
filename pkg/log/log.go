@@ -11,11 +11,11 @@ import (
 )
 
 const (
-	LogLevelDebug = "[debug] "
-	LogLevelInfo  = "[info] "
-	LogLevelWarn  = "[warn] "
-	LogLevelError = "[error] "
-	LogLevelFatal = "[fatal] "
+	LogLevelDebug = "debug"
+	LogLevelInfo  = "info"
+	LogLevelWarn  = "warn"
+	LogLevelError = "error"
+	LogLevelFatal = "fatal"
 )
 
 var (
@@ -36,11 +36,12 @@ func initDefault() {
 func Init(level string) error {
 	switch level {
 	case LogLevelDebug:
-		logDebug = log.New(os.Stdout, LogLevelDebug, log.LstdFlags)
-		logInfo = log.New(os.Stdout, LogLevelInfo, log.LstdFlags)
-		logWarn = log.New(os.Stdout, LogLevelWarn, log.LstdFlags)
-		logError = log.New(os.Stderr, LogLevelError, log.LstdFlags)
-		logFatal = log.New(os.Stdout, LogLevelFatal, log.LstdFlags)
+
+		logDebug = log.New(os.Stdout, "["+LogLevelDebug+"] ", log.LstdFlags)
+		logInfo = log.New(os.Stdout, "["+LogLevelInfo+"] ", log.LstdFlags)
+		logWarn = log.New(os.Stdout, "["+LogLevelWarn+"] ", log.LstdFlags)
+		logError = log.New(os.Stderr, "["+LogLevelError+"] ", log.LstdFlags)
+		logFatal = log.New(os.Stdout, "["+LogLevelFatal+"] ", log.LstdFlags)
 
 	case LogLevelInfo:
 		initDefault()

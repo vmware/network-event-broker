@@ -1,6 +1,6 @@
 ## Our Pledge
 
-We as members, contributors, and leaders pledge to make participation in cloud-network-setup project and our
+We as members, contributors, and leaders pledge to make participation in network-event-broker project and our
 community a harassment-free experience for everyone, regardless of age, body
 size, visible or invisible disability, ethnicity, sex characteristics, gender
 identity and expression, level of experience, education, socio-economic status,

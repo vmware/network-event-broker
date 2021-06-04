@@ -5,39 +5,62 @@
 package network
 
 import (
+	"errors"
+	"strings"
+
+	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/log"
-	"github.com/vishvananda/netlink"
 )
 
-// Links we want to configure
-type Network struct {
-	LinksByName  map[string]int
-	LinksByIndex map[int]string
-}
-
-func AcquireLinks() (*Network, error) {
-	linkList, err := netlink.LinkList()
+func ConfigureNetwork(ifname string) error {
+	n, err := AcquireLinks()
 	if err != nil {
-		return nil, err
+		log.Errorf("Failed to fetch links: %+v", err)
+		return err
 	}
 
-	n := Network{
-		LinksByName:  make(map[string]int),
-		LinksByIndex: make(map[int]string),
+	index, ok := n.LinksByName[ifname]
+	if !ok {
+		return errors.New("not found")
 	}
 
-	log.Debugf("Acquiring link information ")
+	existingAddresses, err := GetIPv4Addresses(ifname)
+	if err != nil {
+		log.Errorf("Failed to fetch Ip addresses of link='%s' ifindex='%d': %+v", ifname, err)
+		return err
+	}
 
-	for _, link := range linkList {
-		if link.Attrs().Name == "lo" {
+	for a := range existingAddresses {
+
+		gw, err := GetIpv4Gateway(index)
+		if err != nil {
 			continue
 		}
 
-		n.LinksByName[link.Attrs().Name] = link.Attrs().Index
-		n.LinksByIndex[link.Attrs().Index] = link.Attrs().Name
+		if err = AddRoute(index, conf.ROUTE_TABLE_BASE+index, gw); err != nil {
+			log.Warnf("Failed to add route on link='%s' ifindex='%d' gw='%s': %+v", ifname, index, gw, err)
+		}
 
-		log.Debugf("Acquired link='%v' ifindex='%v' from netlink message", link.Attrs().Name, link.Attrs().Index)
+		a := strings.TrimSuffix(strings.SplitAfter(a, "/")[0], "/")
+
+		from := &IPRoutingRule{
+			From:  a,
+			Table: ROUTE_TABLE_BASE + index,
+		}
+
+		if err := AddRoutingPolicyRule(from); err != nil {
+			return err
+		}
+
+		to := &IPRoutingRule{
+			To:    a,
+			Table: ROUTE_TABLE_BASE + index,
+		}
+
+		if err := AddRoutingPolicyRule(to); err != nil {
+			return err
+		}
 	}
 
-	return &n, nil
+	return nil
 }

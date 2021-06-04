@@ -20,6 +20,8 @@ const (
 	ConfFile = "network-broker"
 
 	ManagerStateDir = "manager.d"
+
+	ROUTE_TABLE_BASE = 9999
 )
 
 // Config file key value
