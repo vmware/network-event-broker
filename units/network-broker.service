@@ -3,8 +3,8 @@
 
 [Unit]
 Description=A daemon configures network upon events
-Documentation=man:networkd-broker.conf(5)
-After=network.target
+Documentation=man:network-broker.conf(5)
+After=network-pre.target
 
 [Service]
 ExecStart=/usr/bin/network-broker

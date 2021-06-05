@@ -1,8 +1,9 @@
 [System]
-#LogLevel="info"
+LogLevel="info"
+Generator="dhclient"
 
 [Network]
-#Links="ens33 ens37"
-#RoutingPolicyRules="ens33 ens37"
-Generator="dhclient"
+Links="ens33 ens37"
+RoutingPolicyRules="ens33 ens37"
 UseDNS="true"
+

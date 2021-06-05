@@ -14,13 +14,14 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"golang.org/x/sys/unix"
+
 	"github.com/network-event-broker/pkg/bus"
 	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
 	"github.com/network-event-broker/pkg/parser"
 	"github.com/network-event-broker/pkg/system"
-	"golang.org/x/sys/unix"
 )
 
 func setDnsServer(dnsServers []net.IP, index int) error {
@@ -135,13 +136,17 @@ func WatchDHClient(n *network.Network, c *conf.Config, finished chan bool) {
 	}
 	defer watcher.Close()
 
+	log.Infoln("Listening to DHClient events")
+	// Try once
+	TaskDHClient(n, c)
+
 	done := make(chan bool)
 
 	go func() {
 		for {
 			select {
 			case event := <-watcher.Events:
-				log.Debugln(event.Op.String())
+				log.Debugf("DHClient Received event: %s", event.Op.String())
 
 				TaskDHClient(n, c)
 

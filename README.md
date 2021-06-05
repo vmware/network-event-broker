@@ -32,7 +32,7 @@ May 14 17:08:13 Zeus cat[273185]: LINK=ens33
 2. `dhclient`
   For `dhclient` scripts will be executed (in the dir ```routable.d```) when the `/var/lib/dhclient/dhclient.leases` file gets modified by `dhclient` and lease information is passed to the scripts as environmental arguments.
 
-Enviroment variables `LINK`, `LINKIFINDEX=` and DHCP lease information `DHCP_LEASE=`  passed to the scripts via enviroment viariables.
+Enviroment variables `LINK`, `LINKIFINDEX=` and DHCP lease information `DHCP_LEASE=`  passed to the scripts.
 
 #### Building from source
 ----
@@ -60,6 +60,16 @@ RoutingPolicyRules=
 ```
 A whitespace-separated list of links for which routing policy rules would be configured per address. When set, `network-broker` automatically adds routing policy rules `from` and `to` in another routing table `(ROUTE_TABLE_BASE = 9999 + ifindex)`. When these addresses are removed, the routing policy rules are also dropped. Defaults to unset.
 
+```bash
+Generator= 
+```
+Specifies the network event source to listen. Takes one of `systemd-networkd` or `dhclient`. Defaults to `systemd-networkd`.
+
+
+```bash
+UseDNS=
+```
+A boolean. When true the DNS server will be se to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
 
 The `[System]` section takes following Keys:
 ``` bash
@@ -75,9 +85,10 @@ Specifies the log level. Takes one of `info`, `warn`, `error`, `debug` and `fata
 LogLevel="debug"
 
 [Network]
-Links="ens33 ens37"
+Links="ens37"
 RoutingPolicyRules="ens33 ens37"
-
+UseDNS=true
+Generator="dhclient"
 ```
 
 ```bash

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/godbus/dbus/v5"
+
 	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
@@ -185,6 +186,8 @@ func WatchNetworkdDBusEvents(n *network.Network, c *conf.Config, finished chan b
 		log.Errorf("Failed to add match signal for 'org.freedesktop.network1`: %v", err)
 		return err
 	}
+
+	log.Infoln("Listening to systemd-networkd DBus events")
 
 	sigChannel := make(chan *dbus.Signal, 512)
 	conn.Signal(sigChannel)

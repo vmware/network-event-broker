@@ -7,6 +7,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/network-event-broker/pkg/conf"
@@ -36,8 +37,13 @@ func main() {
 
 	finished := make(chan bool)
 
-	go generators.WatchNetworkdDBusEvents(n, c, finished)
-	go generators.WatchDHClient(n, c, finished)
+	if c.System.Generator == "" || strings.Contains(c.System.Generator, "systemd-networkd") {
+		log.Infoln("Starting generator : `systemd-netword`")
+		go generators.WatchNetworkdDBusEvents(n, c, finished)
+	} else {
+		log.Infoln("Starting generator: `DHClient`")
+		go generators.WatchDHClient(n, c, finished)
+	}
 
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, os.Interrupt)
