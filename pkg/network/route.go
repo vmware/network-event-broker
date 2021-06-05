@@ -107,7 +107,7 @@ func RemoveRoute(route *Route) error {
 		Table:     route.Table,
 	}
 
-	if err := netlink.RouteDel(&rt); err != nil && err.Error() != "file exists" {
+	if err := netlink.RouteDel(&rt); err != nil {
 		return err
 	}
 

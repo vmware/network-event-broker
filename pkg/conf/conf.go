@@ -14,9 +14,10 @@ import (
 
 // App Version
 const (
-	Version  = "0.1"
-	ConfPath = "/etc/network-broker/"
-	ConfFile = "network-broker"
+	Version           = "0.1"
+	ConfPath          = "/etc/network-broker/"
+	ConfFile          = "network-broker"
+	DHClientLeaseFile = "/var/lib/dhclient/dhclient.leases"
 
 	ManagerStateDir = "manager.d"
 
@@ -29,7 +30,8 @@ type Network struct {
 	RoutingPolicyRules string `mapstructure:"RoutingPolicyRules"`
 }
 type System struct {
-	LogLevel string `mapstructure:"LogLevel"`
+	Generator string `mapstructure:"Generator`
+	LogLevel  string `mapstructure:"LogLevel"`
 }
 type Config struct {
 	Network Network `mapstructure:"Network"`
@@ -69,6 +71,9 @@ func Parse() (*Config, error) {
 
 	log.SetLevel(c.System.LogLevel)
 
+	if len(c.System.Generator) > 0 {
+		log.Infof("Parsed Generator='%v' from configuration", c.System.Generator)
+	}
 	if len(c.Network.Links) > 0 {
 		log.Infof("Parsed links='%v' from configuration", c.Network.Links)
 	}

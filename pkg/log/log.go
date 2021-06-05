@@ -26,6 +26,8 @@ var (
 	logFatal *log.Logger
 )
 
+var Level string
+
 func initDefault() {
 	logInfo = log.New(os.Stdout, LogLevelInfo, log.LstdFlags)
 	logWarn = log.New(os.Stdout, LogLevelWarn, log.LstdFlags)
@@ -33,7 +35,11 @@ func initDefault() {
 	logFatal = log.New(os.Stdout, LogLevelFatal, log.LstdFlags)
 }
 
-func Init(level string) error {
+func Init() {
+	SetLevel("info")
+}
+
+func SetLevel(level string) {
 	switch level {
 	case LogLevelDebug:
 
@@ -62,11 +68,6 @@ func Init(level string) error {
 	default:
 		initDefault()
 	}
-	return nil
-}
-
-func SetLevel(level string) {
-	Init(level)
 }
 
 func Debugf(format string, v ...interface{}) {

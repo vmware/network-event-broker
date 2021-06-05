@@ -129,8 +129,7 @@ func ConfigureNetwork(link string, n *Network) error {
 	log.Debugf("Successfully added default gateway='%s' on link='%s' ifindex='%d' table='%d", gw, link, index, rt.Table)
 
 	for address := range existingAddresses {
-		err := addOneAddressRule(n, address, link, index)
-		if err != nil {
+		if err := addOneAddressRule(n, address, link, index); err != nil {
 			continue
 		}
 	}

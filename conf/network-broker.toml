@@ -1,6 +1,7 @@
 [System]
-LogLevel="info"
+#LogLevel="info"
 
 [Network]
-Links="ens33 ens37"
-RoutingPolicyRules="ens33 ens37"
+#Links="ens33 ens37"
+#RoutingPolicyRules="ens33 ens37"
+Generator="systemd-networkd dhclient"

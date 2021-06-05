@@ -1,9 +1,18 @@
 ### network-event-broker
 ----
-A daemon configures network on ```systemd-networkd's``` [DBus](https://www.freedesktop.org/wiki/Software/dbus/) events. Use cases like a way to run a command when get a new ip via dhcp. As of now there is no native ```systemd-networkd``` solution for this problem. ```network-event-broker``` listens to dbus signals and reacts according to the events. It's written in golang.
+A daemon configures network and executes scripts on network events such as `systemd-networkd's` [DBus](https://www.freedesktop.org/wiki/Software/dbus/) events,
+`dhclient` gains lease lease. It also watches the when a address getting added/removed, links added/removed etc.
 
-```network-event-broker``` creates link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` and manager state dir ```manager.d``` in ```/etc/network-event-broker```. Executable scripts can be placed into directories that reflect systemd-networkd operational states, and are executed when the daemon receives the relevant event from `systemd-networkd`. See [networkctl](https://www.freedesktop.org/software/systemd/man/networkctl.html).
+```network-event-broker``` creates link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` and manager state dir ```manager.d``` in ```/etc/network-event-broker```. Executable scripts can be placed into directories.
 
+Use cases: 
+
+How to run a command when get a new ip via DHCP ?
+
+1. `systemd-networkd's`
+ Scripts are executed when the daemon receives the relevant event from `systemd-networkd`. See [networkctl](https://www.freedesktop.org/software/systemd/man/networkctl.html).
+
+ 
 ```bash
 ❯ networkctl list
 
@@ -11,10 +20,12 @@ IDX LINK    TYPE     OPERATIONAL SETUP
   1 lo      loopback carrier     unmanaged
   2 ens33   ether    routable    configured
   3 ens37   ether    routable    unmanaged
-  4 virbr0  bridge   no-carrier  unmanaged
 
-4 links listed.
+3 links listed.
 ```
+
+2. `dhclient`
+  For `dhclient` scripts will be executed (in the dir ```routable.d```) when the `/var/lib/dhclient/dhclient.leases` file gets modified by `dhclient` and lease information is passed to the scripts as environmental arguments.
 
 Enviroment variables ```OperationalState=``` , ```LINK=```, ```LINKIFINDEX=``` and DHCP lease information ```DHCP_LEASE= ``` passed to the scripts via enviroment viariables.
 
@@ -22,7 +33,6 @@ Enviroment variables ```OperationalState=``` , ```LINK=```, ```LINKIFINDEX=``` a
 May 14 17:08:13 Zeus cat[273185]: OperationalState="routable"
 May 14 17:08:13 Zeus cat[273185]: LINK=ens33
 ```
-
 
 #### Building from source
 ----
@@ -48,14 +58,14 @@ A whitespace-separated list of links whose events should be monitored. Defaults 
 ```bash
 RoutingPolicyRules=
 ```
-A whitespace-separated list of links for which routing policy rules would be configured per address. Defaults to unset.
+A whitespace-separated list of links for which routing policy rules would be configured per address. When set, `network-broker` automatically adds routing policy rules `from` and `to` in another routing table `(ROUTE_TABLE_BASE = 9999 + ifindex)`. When these addresses are removed, the routing policy rules are also dropped. Defaults to unset.
 
 
 The `[System]` section takes following Keys:
 ``` bash
 LogLevel=
 ```
-Specifies the log level. Takes one of `info`, `debug` ... Defaults to `info`.
+Specifies the log level. Takes one of `info`, `warn`, `error`, `debug` and `fatal`. Defaults to `info`.
 
 
 ```bash
