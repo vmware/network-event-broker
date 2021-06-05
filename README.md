@@ -5,14 +5,14 @@ A daemon configures network and executes scripts on network events such as `syst
 
 ```network-event-broker``` creates link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` and manager state dir ```manager.d``` in ```/etc/network-event-broker```. Executable scripts can be placed into directories.
 
-Use cases: 
+Use cases:
 
 How to run a command when get a new ip via DHCP ?
 
 1. `systemd-networkd's`
  Scripts are executed when the daemon receives the relevant event from `systemd-networkd`. See [networkctl](https://www.freedesktop.org/software/systemd/man/networkctl.html).
 
- 
+
 ```bash
 ❯ networkctl list
 
@@ -24,15 +24,15 @@ IDX LINK    TYPE     OPERATIONAL SETUP
 3 links listed.
 ```
 
-2. `dhclient`
-  For `dhclient` scripts will be executed (in the dir ```routable.d```) when the `/var/lib/dhclient/dhclient.leases` file gets modified by `dhclient` and lease information is passed to the scripts as environmental arguments.
-
-Enviroment variables ```OperationalState=``` , ```LINK=```, ```LINKIFINDEX=``` and DHCP lease information ```DHCP_LEASE= ``` passed to the scripts via enviroment viariables.
-
 ```bash
 May 14 17:08:13 Zeus cat[273185]: OperationalState="routable"
 May 14 17:08:13 Zeus cat[273185]: LINK=ens33
 ```
+
+2. `dhclient`
+  For `dhclient` scripts will be executed (in the dir ```routable.d```) when the `/var/lib/dhclient/dhclient.leases` file gets modified by `dhclient` and lease information is passed to the scripts as environmental arguments.
+
+Enviroment variables `LINK`, `LINKIFINDEX=` and DHCP lease information `DHCP_LEASE=`  passed to the scripts via enviroment viariables.
 
 #### Building from source
 ----

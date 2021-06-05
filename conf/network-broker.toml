@@ -4,4 +4,5 @@
 [Network]
 #Links="ens33 ens37"
 #RoutingPolicyRules="ens33 ens37"
-Generator="systemd-networkd dhclient"
+Generator="dhclient"
+UseDNS="true"

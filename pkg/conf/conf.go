@@ -28,6 +28,8 @@ const (
 type Network struct {
 	Links              string `mapstructure:"Links"`
 	RoutingPolicyRules string `mapstructure:"RoutingPolicyRules"`
+	UseDNS bool `mapstructure:"UseDNS"`
+
 }
 type System struct {
 	Generator string `mapstructure:"Generator`

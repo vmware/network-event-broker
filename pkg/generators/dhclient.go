@@ -6,20 +6,41 @@ package generators
 
 import (
 	"errors"
-	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/network-event-broker/pkg/bus"
 	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
+	"github.com/network-event-broker/pkg/parser"
 	"github.com/network-event-broker/pkg/system"
+	"golang.org/x/sys/unix"
 )
 
-func executeDHClientLinkStateScripts(n *network.Network, link string, lease string) error {
+func setDnsServer(dnsServers []net.IP, index int) error {
+	linkDns := make([]bus.DnsServer, len(dnsServers))
+	for i, s := range dnsServers {
+		linkDns[i] = bus.DnsServer{
+			Family:  unix.AF_INET,
+			Address: []byte(s.To4()),
+		}
+	}
+
+	if err := bus.SetResolve(linkDns, index); err != nil {
+		log.Warnln(err)
+		return err
+	}
+
+	return nil
+}
+
+func executeDHClientLinkStateScripts(n *network.Network, link string, strIndex string, lease string) error {
 	scripts, err := system.ReadAllScriptInConfDir(path.Join(conf.ConfPath, "routable.d"))
 	if err != nil {
 		log.Errorf("Failed to read script dir: %+v", err)
@@ -29,13 +50,13 @@ func executeDHClientLinkStateScripts(n *network.Network, link string, lease stri
 	for _, s := range scripts {
 		script := path.Join(conf.ConfPath, "routable.d", s)
 
-		log.Debugf("Executing script='%s' for link='%s' lease=%s", script, link, lease)
+		log.Debugf("Executing script='%s' for '%s' lease=%s", script, link, lease)
 
 		cmd := exec.Command(script)
 		cmd.Env = append(os.Environ(),
 			link,
 			link,
-			lease,
+			strIndex,
 			lease,
 		)
 
@@ -50,18 +71,21 @@ func executeDHClientLinkStateScripts(n *network.Network, link string, lease stri
 	return nil
 }
 
-func TaskDHClient(n *network.Network) error {
+func TaskDHClient(n *network.Network, c *conf.Config) error {
 	leaseLines, err := system.ReadLines(conf.DHClientLeaseFile)
 	if err != nil {
-		log.Debugf("Failed to read dhclient lease file '%s': '%v'", conf.DHClientLeaseFile, err)
+		log.Debugf("Failed to read DHClient lease file '%s': '%v'", conf.DHClientLeaseFile, err)
 	}
 
 	if len(leaseLines) <= 0 {
 		return errors.New("not found")
 	}
 
-	linkNameEnvArg := "LINK="
-	leaseArg := "DHCP_LEASE="
+	link := "LINK="
+	index := "LINKINDEX="
+	lease := "DHCP_LEASE="
+	idx := 0
+	var dnsServers []net.IP
 
 	for _, s := range leaseLines {
 		if strings.HasPrefix(s, "lease {") {
@@ -69,9 +93,15 @@ func TaskDHClient(n *network.Network) error {
 		}
 
 		if strings.HasPrefix(s, "}") {
-			executeDHClientLinkStateScripts(n, linkNameEnvArg, leaseArg)
-			linkNameEnvArg = "LINK="
-			leaseArg = "DHCP_LEASE="
+			executeDHClientLinkStateScripts(n, link, index, lease)
+			link = "LINK="
+			index = "LINKINDEX="
+			lease = "DHCP_LEASE="
+
+			if c.Network.UseDNS {
+				setDnsServer(dnsServers, idx)
+			}
+
 			continue
 		}
 
@@ -79,10 +109,20 @@ func TaskDHClient(n *network.Network) error {
 			i := strings.Index(s, "\"")
 			j := strings.LastIndex(s, "\"")
 
-			linkNameEnvArg += s[i+1 : j-1]
+			l := s[i+1 : j]
+			link += l
+
+			idx = n.LinksByName[l]
+			index += strconv.Itoa(n.LinksByName[link])
 			continue
+		} else if strings.Contains(s, "domain-name-servers") {
+			dns := parser.ParseDNS(s)
+			for _, d := range dns {
+				v, _ := parser.ParseIP(strings.TrimSpace(d))
+				dnsServers = append(dnsServers, v)
+			}
 		}
-		leaseArg += strings.TrimSpace(s)
+		lease += strings.TrimSpace(s)
 	}
 
 	return nil
@@ -103,7 +143,7 @@ func WatchDHClient(n *network.Network, c *conf.Config, finished chan bool) {
 			case event := <-watcher.Events:
 				log.Debugln(event.Op.String())
 
-				TaskDHClient(n)
+				TaskDHClient(n, c)
 
 			case err := <-watcher.Errors:
 				log.Errorln(err)
@@ -112,7 +152,7 @@ func WatchDHClient(n *network.Network, c *conf.Config, finished chan bool) {
 	}()
 
 	if err := watcher.Add(conf.DHClientLeaseFile); err != nil {
-		fmt.Println("ERROR", err)
+		log.Errorf("Failed to watch DHClient lease file: %w", err)
 	}
 
 	<-done
