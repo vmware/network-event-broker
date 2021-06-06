@@ -12,9 +12,14 @@ import (
 )
 
 const (
-	resolveInterface  = "org.freedesktop.resolve1"
-	resolveObjectPath = "/org/freedesktop/resolve1"
-	resolveSetLinkDNS = resolveInterface + ".Manager.SetLinkDNS"
+	resolveInterface      = "org.freedesktop.resolve1"
+	resolveObjectPath     = "/org/freedesktop/resolve1"
+	resolveSetLinkDNS     = resolveInterface + ".Manager.SetLinkDNS"
+	resolveSetLinkDomains = resolveInterface + ".Manager.SetLinkDomains"
+
+	hostnameInterface   = "org.freedesktop.hostname1"
+	hostnameObjectPath  = "/org/freedesktop/hostname1"
+	hostnameSetHostname = hostnameInterface + ".SetStaticHostname"
 )
 
 type DnsServer struct {
@@ -22,7 +27,12 @@ type DnsServer struct {
 	Address []byte
 }
 
-func SetResolve(dns []DnsServer, index int) error {
+type Domain struct {
+	Domain string
+	Set    bool
+}
+
+func SetResolveDNS(dns []DnsServer, index int) error {
 	conn, err := dbus.ConnectSystemBus()
 	if err != nil {
 		return fmt.Errorf("failed to connect to system bus: %v", err)
@@ -38,6 +48,44 @@ func SetResolve(dns []DnsServer, index int) error {
 	}
 
 	log.Debugln("Successfully set DNS servers")
+
+	return nil
+}
+
+func SetResolveDomain(dnsDomains []Domain, index int) error {
+	conn, err := dbus.ConnectSystemBus()
+	if err != nil {
+		return fmt.Errorf("failed to connect to system bus: %v", err)
+	}
+	defer conn.Close()
+
+	obj := conn.Object(resolveInterface, resolveObjectPath)
+	err = obj.Call(resolveSetLinkDomains, 0, index, dnsDomains).Store()
+	if err != nil {
+		return fmt.Errorf("failed to set DNS domains: %+v: %v", dnsDomains, err)
+	}
+
+	log.Debugln("Successfully set DNS domain")
+
+	return nil
+}
+
+func SetHostname(hostname string) error {
+	conn, err := dbus.ConnectSystemBus()
+	if err != nil {
+		return fmt.Errorf("failed to connect to system bus: %v", err)
+	}
+	defer conn.Close()
+
+	log.Debugf("Setting hostname='%s'", hostname)
+
+	obj := conn.Object(hostnameInterface, hostnameObjectPath)
+	err = obj.Call(hostnameSetHostname, 0, hostname, true).Store()
+	if err != nil {
+		return fmt.Errorf("failed to set hostname: %w", err)
+	}
+
+	log.Debugln("Successfully set hostname")
 
 	return nil
 }
