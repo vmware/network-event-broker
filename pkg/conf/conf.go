@@ -29,7 +29,10 @@ type Network struct {
 	Links              string `mapstructure:"Links"`
 	RoutingPolicyRules string `mapstructure:"RoutingPolicyRules"`
 	UseDNS             bool   `mapstructure:"UseDNS"`
+	UseDomain          bool   `mapstructure:"UseDomain"`
+	UseHostname        bool   `mapstructure:"UseHostname"`
 }
+
 type System struct {
 	Generator string `mapstructure:"Generator"`
 	LogLevel  string `mapstructure:"LogLevel"`
