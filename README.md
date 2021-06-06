@@ -48,6 +48,21 @@ Enviroment variables `LINK`, `LINKIFINDEX=` and DHCP lease information `DHCP_LEA
 ----
 
 Configuration file `network-broker.toml` located in ```/etc/network-broker/``` directory to manage the configuration.
+
+The `[System]` section takes following Keys:
+``` bash
+LogLevel=
+```
+Specifies the log level. Takes one of `info`, `warn`, `error`, `debug` and `fatal`. Defaults to `info`.
+
+```bash
+
+```bash
+Generator= 
+```
+Specifies the network event source to listen. Takes one of `systemd-networkd` or `dhclient`. Defaults to `systemd-networkd`.
+
+
 The `[Network]` section takes following Keys:
 
 ```bash
@@ -61,24 +76,14 @@ RoutingPolicyRules=
 A whitespace-separated list of links for which routing policy rules would be configured per address. When set, `network-broker` automatically adds routing policy rules `from` and `to` in another routing table `(ROUTE_TABLE_BASE = 9999 + ifindex)`. When these addresses are removed, the routing policy rules are also dropped. Defaults to unset.
 
 ```bash
-Generator= 
-```
-Specifies the network event source to listen. Takes one of `systemd-networkd` or `dhclient`. Defaults to `systemd-networkd`.
-
-
-```bash
 UseDNS=
 ```
 A boolean. When true the DNS server will be se to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
 
-The `[System]` section takes following Keys:
-``` bash
-LogLevel=
-```
-Specifies the log level. Takes one of `info`, `warn`, `error`, `debug` and `fatal`. Defaults to `info`.
-
-
 ```bash
+UseDomain=
+```
+A boolean. When true the DNS domains will be se to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
 
 ❯ cat /etc/network-broker/network-broker.toml
 [System]

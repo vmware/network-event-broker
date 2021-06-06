@@ -5,7 +5,6 @@
 package generators
 
 import (
-	"errors"
 	"net"
 	"os"
 	"os/exec"
@@ -14,14 +13,13 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
-	"golang.org/x/sys/unix"
-
 	"github.com/network-event-broker/pkg/bus"
 	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
 	"github.com/network-event-broker/pkg/parser"
 	"github.com/network-event-broker/pkg/system"
+	"golang.org/x/sys/unix"
 )
 
 func setDnsServer(dnsServers []net.IP, index int) error {
@@ -33,9 +31,25 @@ func setDnsServer(dnsServers []net.IP, index int) error {
 		}
 	}
 
-	if err := bus.SetResolve(linkDns, index); err != nil {
+	if err := bus.SetResolveDNS(linkDns, index); err != nil {
 		log.Warnln(err)
-		return err
+	}
+
+	return nil
+}
+
+func setDnsDomain(dnsDomains []string, index int) error {
+	linkDomains := make([]bus.Domain, len(dnsDomains))
+	for i, domain := range dnsDomains {
+
+		linkDomains[i] = bus.Domain{
+			Domain: domain,
+			Set:    true,
+		}
+	}
+
+	if err := bus.SetResolveDomain(linkDomains, index); err != nil {
+		log.Warnln(err)
 	}
 
 	return nil
@@ -73,57 +87,46 @@ func executeDHClientLinkStateScripts(n *network.Network, link string, strIndex s
 }
 
 func TaskDHClient(n *network.Network, c *conf.Config) error {
-	leaseLines, err := system.ReadLines(conf.DHClientLeaseFile)
+	leases, err := parser.ParseDHClientLease()
 	if err != nil {
-		log.Debugf("Failed to read DHClient lease file '%s': '%v'", conf.DHClientLeaseFile, err)
+		log.Debugf("Failed to parse DHClient lease file '%s': '%v'", conf.DHClientLeaseFile, err)
 	}
 
-	if len(leaseLines) <= 0 {
-		return errors.New("not found")
-	}
+	for i, lease := range leases {
 
-	link := "LINK="
-	index := "LINKINDEX="
-	lease := "DHCP_LEASE="
-	idx := 0
-	var dnsServers []net.IP
-
-	for _, s := range leaseLines {
-		if strings.HasPrefix(s, "lease {") {
+		_, ok := n.LinksByName[i]
+		if !ok {
 			continue
 		}
 
-		if strings.HasPrefix(s, "}") {
-			executeDHClientLinkStateScripts(n, link, index, lease)
-			link = "LINK="
-			index = "LINKINDEX="
-			lease = "DHCP_LEASE="
+		idx := n.LinksByName[i]
+		strIndex := strconv.Itoa(idx)
 
-			if c.Network.UseDNS {
-				setDnsServer(dnsServers, idx)
+		link := "LINK=" + i
+		index := "LINKINDEX=" + strIndex
+		dhcpLease := "DHCP_LEASE=" + "ADDRESS=" + lease.Address + ",DNS=" + strings.Join(lease.Dns, ",") + ",ROUTER=" + lease.Routers + ",SUBNETMASK=" + lease.SubnetMask
+
+		executeDHClientLinkStateScripts(n, link, index, dhcpLease)
+
+		if c.Network.UseHostname {
+			if err := bus.SetHostname(lease.Hostname); err != nil {
+				log.Warnln("Failed to set hostname='%s': %+w", lease.Hostname, err)
 			}
-
-			continue
 		}
 
-		if strings.Contains(s, "interface") {
-			i := strings.Index(s, "\"")
-			j := strings.LastIndex(s, "\"")
+		if c.Network.UseDNS && len(lease.Dns) > 0 {
+			var dnsServers []net.IP
 
-			l := s[i+1 : j]
-			link += l
-
-			idx = n.LinksByName[l]
-			index += strconv.Itoa(n.LinksByName[link])
-			continue
-		} else if strings.Contains(s, "domain-name-servers") {
-			dns := parser.ParseDNS(s)
-			for _, d := range dns {
+			for _, d := range lease.Dns {
 				v, _ := parser.ParseIP(strings.TrimSpace(d))
 				dnsServers = append(dnsServers, v)
 			}
+			setDnsServer(dnsServers, idx)
 		}
-		lease += strings.TrimSpace(s)
+
+		if c.Network.UseDomain && len(lease.Domain) > 0 {
+			setDnsDomain(lease.Domain, idx)
+		}
 	}
 
 	return nil
