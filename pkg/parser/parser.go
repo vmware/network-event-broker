@@ -6,7 +6,6 @@ package parser
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 	"strings"
@@ -89,11 +88,17 @@ func ParseDHClientLease() (map[string]*Lease, error) {
 			lease.Server = strings.TrimSuffix(strings.Split(line, " ")[2], ";")
 		case strings.Contains(line, "domain-name-servers"):
 			lease.Dns = strings.Split(strings.TrimSuffix(strings.Split(line, " ")[2], ";"), ",")
-			fmt.Println(lease.Dns)
 		case strings.Contains(line, "domain-name"):
 			s := strings.TrimSuffix(strings.ReplaceAll(line, "option domain-name", ""), ";")
 			s = strings.ReplaceAll(s, ",", "")
-			lease.Domain = strings.Split(s, "\"")
+			t := strings.Split(s, "\"")
+
+			for _, d := range t {
+				if strings.TrimSpace(d) == "" {
+					continue
+				}
+				lease.Domain = append(lease.Domain, d)
+			}
 		case strings.Contains(line, "host-name"):
 			lease.Hostname = strings.Split(line, "\"")[1]
 		case strings.Contains(line, "domain-search"):

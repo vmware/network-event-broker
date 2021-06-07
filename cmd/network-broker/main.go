@@ -38,10 +38,10 @@ func main() {
 	finished := make(chan bool)
 
 	if c.System.Generator == "" || strings.Contains(c.System.Generator, "systemd-networkd") {
-		log.Infoln("Starting generator : `systemd-netword`")
+		log.Infoln("Starting generator : 'systemd-netword")
 		go generators.WatchNetworkdDBusEvents(n, c, finished)
 	} else {
-		log.Infoln("Starting generator: `DHClient`")
+		log.Infoln("Starting generator: 'dhclient'")
 		go generators.WatchDHClient(n, c, finished)
 	}
 

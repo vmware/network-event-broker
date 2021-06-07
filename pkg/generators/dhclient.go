@@ -41,7 +41,6 @@ func setDnsServer(dnsServers []net.IP, index int) error {
 func setDnsDomain(dnsDomains []string, index int) error {
 	linkDomains := make([]bus.Domain, len(dnsDomains))
 	for i, domain := range dnsDomains {
-
 		linkDomains[i] = bus.Domain{
 			Domain: domain,
 			Set:    true,
@@ -76,11 +75,11 @@ func executeDHClientLinkStateScripts(n *network.Network, link string, strIndex s
 		)
 
 		if err := cmd.Run(); err != nil {
-			log.Errorf("Failed to execute script='%s': %v", script, err)
+			log.Errorf("Failed to execute script='%s': %w", script, err)
 			continue
 		}
 
-		log.Debugf("Successfully executed script='%s' script for link='%s'", script, link)
+		log.Debugf("Successfully executed script='%s' for link='%s'", script, link)
 	}
 
 	return nil
@@ -89,22 +88,30 @@ func executeDHClientLinkStateScripts(n *network.Network, link string, strIndex s
 func TaskDHClient(n *network.Network, c *conf.Config) error {
 	leases, err := parser.ParseDHClientLease()
 	if err != nil {
-		log.Debugf("Failed to parse DHClient lease file '%s': '%v'", conf.DHClientLeaseFile, err)
+		log.Debugf("Failed to parse DHClient lease file '%s': %w", conf.DHClientLeaseFile, err)
 	}
 
 	for i, lease := range leases {
-
 		_, ok := n.LinksByName[i]
 		if !ok {
 			continue
 		}
 
 		idx := n.LinksByName[i]
+		if c.Network.Links != "" {
+			if !strings.Contains(c.Network.Links, n.LinksByIndex[idx]) {
+				return nil
+			}
+		}
+
 		strIndex := strconv.Itoa(idx)
 
 		link := "LINK=" + i
 		index := "LINKINDEX=" + strIndex
-		dhcpLease := "DHCP_LEASE=" + "ADDRESS=" + lease.Address + ",DNS=" + strings.Join(lease.Dns, ",") + ",ROUTER=" + lease.Routers + ",SUBNETMASK=" + lease.SubnetMask
+		dns := strings.Join(lease.Dns, ",")
+		domain := strings.Join(lease.Domain, ",")
+		strings.Join(lease.Domain, ",")
+		dhcpLease := "DHCP_LEASE=" + "ADDRESS=" + lease.Address + ",DNS=" + strings.Join(lease.Dns, ",") + ",ROUTER=" + lease.Routers + ",SUBNETMASK=" + lease.SubnetMask + ",DNS=" + dns + ",DOMAIN=" + domain
 
 		executeDHClientLinkStateScripts(n, link, index, dhcpLease)
 
@@ -135,12 +142,12 @@ func TaskDHClient(n *network.Network, c *conf.Config) error {
 func WatchDHClient(n *network.Network, c *conf.Config, finished chan bool) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Errorf("Failed to watch DHClient lease: %+v", err)
+		log.Errorf("Failed to watch DHClient lease: %w", err)
 	}
 	defer watcher.Close()
 
 	log.Infoln("Listening to DHClient events")
-	// Try once
+	// Try once incase dhclient already have the leases
 	TaskDHClient(n, c)
 
 	done := make(chan bool)

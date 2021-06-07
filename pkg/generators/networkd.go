@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/godbus/dbus/v5"
-
 	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
@@ -23,7 +22,7 @@ import (
 func executeNetworkdLinkStateScripts(link string, index int, k string, v string) error {
 	scriptDirs, err := system.ReadAllScriptDirs(conf.ConfPath)
 	if err != nil {
-		log.Debugln("Failed to find any scripts in conf dir")
+		log.Debugln("Failed to find any scripts in conf dir: %+v", err)
 		return err
 	}
 
@@ -77,7 +76,7 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string)
 					continue
 				}
 
-				log.Debugf("Successfully executed script '%s' in dir='%v' script for link='%s'", script, d, link)
+				log.Debugf("Successfully executed script '%s' in dir='%v' for link='%s'", script, d, link)
 			}
 		}
 	}

@@ -1,13 +1,13 @@
 ### network-event-broker
 ----
 A daemon configures network and executes scripts on network events such as `systemd-networkd's` [DBus](https://www.freedesktop.org/wiki/Software/dbus/) events,
-`dhclient` gains lease lease. It also watches the when a address getting added/removed, links added/removed etc.
+`dhclient` gains lease lease. It also watches the when an address getting added/removed/modified, links added/removed etc.
 
 ```network-event-broker``` creates link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` and manager state dir ```manager.d``` in ```/etc/network-event-broker```. Executable scripts can be placed into directories.
 
 Use cases:
 
-How to run a command when get a new ip via DHCP ?
+How to run a command when get a new address is acquired via DHCP ?
 
 1. `systemd-networkd's`
  Scripts are executed when the daemon receives the relevant event from `systemd-networkd`. See [networkctl](https://www.freedesktop.org/software/systemd/man/networkctl.html).
@@ -51,13 +51,13 @@ Configuration file `network-broker.toml` located in ```/etc/network-broker/``` d
 
 The `[System]` section takes following Keys:
 ``` bash
+
 LogLevel=
 ```
 Specifies the log level. Takes one of `info`, `warn`, `error`, `debug` and `fatal`. Defaults to `info`.
 
 ```bash
 
-```bash
 Generator= 
 ```
 Specifies the network event source to listen. Takes one of `systemd-networkd` or `dhclient`. Defaults to `systemd-networkd`.
@@ -66,11 +66,13 @@ Specifies the network event source to listen. Takes one of `systemd-networkd` or
 The `[Network]` section takes following Keys:
 
 ```bash
+
 Links=
 ```
 A whitespace-separated list of links whose events should be monitored. Defaults to unset.
 
 ```bash
+
 RoutingPolicyRules=
 ```
 A whitespace-separated list of links for which routing policy rules would be configured per address. When set, `network-broker` automatically adds routing policy rules `from` and `to` in another routing table `(ROUTE_TABLE_BASE = 9999 + ifindex)`. When these addresses are removed, the routing policy rules are also dropped. Defaults to unset.
@@ -78,22 +80,30 @@ A whitespace-separated list of links for which routing policy rules would be con
 ```bash
 UseDNS=
 ```
-A boolean. When true the DNS server will be se to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
+A boolean. When true, the DNS server will be se to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
 
 ```bash
 UseDomain=
 ```
-A boolean. When true the DNS domains will be se to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
+A boolean. When true, the DNS domains will be sent to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
 
-❯ cat /etc/network-broker/network-broker.toml
+```bash
+UseHostname=
+```
+A boolean. When true, the host name be sent to systemd-hostnamed vis DBus. Applies only for DHClient. Defaults to false.
+
+```bash
+❯ sudo cat /etc/network-broker/network-broker.toml 
 [System]
 LogLevel="debug"
+Generator="dhclient"
 
 [Network]
-Links="ens37"
+Links="ens33 ens37"
 RoutingPolicyRules="ens33 ens37"
-UseDNS=true
-Generator="dhclient"
+UseDNS="true"
+UseDomain="true"
+
 ```
 
 ```bash
