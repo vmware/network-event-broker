@@ -14,10 +14,12 @@ import (
 
 // App Version
 const (
-	Version           = "0.1"
-	ConfPath          = "/etc/network-broker/"
-	ConfFile          = "network-broker"
+	Version  = "0.1"
+	ConfPath = "/etc/network-broker/"
+	ConfFile = "network-broker"
+
 	DHClientLeaseFile = "/var/lib/dhclient/dhclient.leases"
+	NetworkdLeasePath = "/run/systemd/netif/leases"
 
 	ManagerStateDir = "manager.d"
 
@@ -53,7 +55,7 @@ func createEventScriptDirs() error {
 	linkEventStateDirs[5] = ManagerStateDir
 
 	for _, d := range linkEventStateDirs {
-		os.MkdirAll(path.Join(ConfPath, d), 07777)
+		os.MkdirAll(path.Join(ConfPath, d), 0755)
 	}
 
 	return nil
@@ -83,11 +85,11 @@ func Parse() (*Config, error) {
 	}
 
 	if len(c.Network.RoutingPolicyRules) > 0 {
-		log.Infof("Parsed RoutingPolicyRules='%v' from configuration", c.Network.Links)
+		log.Infof("Parsed RoutingPolicyRules='%+v' from configuration", c.Network.Links)
 	}
 
 	if err := createEventScriptDirs(); err != nil {
-		log.Errorf("Failed to create default script state directories: %v", err)
+		log.Errorf("Failed to create default script state directories: %+v", err)
 		return nil, err
 	}
 

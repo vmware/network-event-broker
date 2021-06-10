@@ -26,8 +26,6 @@ const (
 
 	networkInterfaceLink       = "org.freedesktop.network1.Link"
 	networkInterfaceLinkEscape = networkInterfaceLink + "/_3"
-
-	networkdLeasePath = "/run/systemd/netif/leases"
 )
 
 func executeNetworkdLinkStateScripts(link string, index int, k string, v string) error {
@@ -56,7 +54,7 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string)
 				continue
 			}
 
-			leaseFile := path.Join(networkdLeasePath, strconv.Itoa(index))
+			leaseFile := path.Join(conf.NetworkdLeasePath, strconv.Itoa(index))
 			leaseLines, err := system.ReadLines(leaseFile)
 			if err != nil {
 				log.Debugf("Failed to read lease file of link='%+v'", link, err)

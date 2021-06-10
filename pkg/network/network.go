@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/log"
 )
 
@@ -58,7 +59,7 @@ func ConfigureNetwork(link string, n *Network) error {
 	rt := Route{
 		IfIndex: index,
 		Gw:      gw,
-		Table:   ROUTE_TABLE_BASE + index,
+		Table:   conf.ROUTE_TABLE_BASE + index,
 	}
 
 	if err = rt.addRoute(); err != nil {
@@ -84,7 +85,7 @@ func (n *Network) addOneAddressRule(address string, link string, index int) erro
 
 	from := &RoutingRule{
 		From:  addr,
-		Table: ROUTE_TABLE_BASE + index,
+		Table: conf.ROUTE_TABLE_BASE + index,
 	}
 
 	if err := from.addRoutingPolicyRule(); err != nil {
@@ -93,11 +94,11 @@ func (n *Network) addOneAddressRule(address string, link string, index int) erro
 
 	n.RoutingRulesByAddressFrom[address] = from
 
-	log.Debugf("Successfully added routing policy rule 'from' on link='%s' ifindex='%d' table='%d'", link, index, ROUTE_TABLE_BASE+index)
+	log.Debugf("Successfully added routing policy rule 'from' on link='%s' ifindex='%d' table='%d'", link, index, conf.ROUTE_TABLE_BASE+index)
 
 	to := &RoutingRule{
 		To:    addr,
-		Table: ROUTE_TABLE_BASE + index,
+		Table: conf.ROUTE_TABLE_BASE + index,
 	}
 
 	if err := to.addRoutingPolicyRule(); err != nil {
@@ -106,7 +107,7 @@ func (n *Network) addOneAddressRule(address string, link string, index int) erro
 
 	n.RoutingRulesByAddressTo[address] = to
 
-	log.Debugf("Successfully added routing policy rule 'to' on link='%s' ifindex='%d' table='%d", link, index, ROUTE_TABLE_BASE+index)
+	log.Debugf("Successfully added routing policy rule 'to' on link='%s' ifindex='%d' table='%d", link, index, conf.ROUTE_TABLE_BASE+index)
 
 	return nil
 }

@@ -9,10 +9,6 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-const (
-	ROUTE_TABLE_BASE = 9999
-)
-
 type RoutingRule struct {
 	From  string
 	To    string
