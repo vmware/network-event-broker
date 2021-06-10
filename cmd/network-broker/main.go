@@ -24,22 +24,26 @@ func main() {
 		log.Warnf("Failed to parse configuration: %v", err)
 	}
 
-	/* Refresh link information */
-	n, err := network.AcquireLinks()
+	n := network.New()
+	if n == nil {
+		log.Fatalln("Failed to create network. Aborting ...")
+		os.Exit(1)
+	}
+
+	err = network.AcquireLinks(n)
 	if err != nil {
 		log.Fatalf("Failed to acquire link information. Unable to continue: %v", err)
 		os.Exit(1)
 	}
 
 	// Watch network
-	go network.WatchAddresses(n)
-	go network.WatchLinks(n)
+	go network.WatchNetwork(n)
 
 	finished := make(chan bool)
 
 	if c.System.Generator == "" || strings.Contains(c.System.Generator, "systemd-networkd") {
-		log.Infoln("Starting generator : 'systemd-netword")
-		go generators.WatchNetworkdDBusEvents(n, c, finished)
+		log.Infoln("Starting generator: 'systemd-netword")
+		go generators.WatchNetworkd(n, c, finished)
 	} else {
 		log.Infoln("Starting generator: 'dhclient'")
 		go generators.WatchDHClient(n, c, finished)

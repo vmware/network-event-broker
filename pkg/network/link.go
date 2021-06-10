@@ -9,13 +9,11 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-func AcquireLinks() (*Network, error) {
+func AcquireLinks(n *Network) error {
 	linkList, err := netlink.LinkList()
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	n := NetworkNew()
 
 	log.Debugf("Acquiring link information ...")
 
@@ -27,8 +25,8 @@ func AcquireLinks() (*Network, error) {
 		n.LinksByName[link.Attrs().Name] = link.Attrs().Index
 		n.LinksByIndex[link.Attrs().Index] = link.Attrs().Name
 
-		log.Debugf("Acquired link='%v' ifindex='%v' from netlink message", link.Attrs().Name, link.Attrs().Index)
+		log.Debugf("Acquired link='%s' ifindex='%d' from netlink message", link.Attrs().Name, link.Attrs().Index)
 	}
 
-	return n, nil
+	return nil
 }

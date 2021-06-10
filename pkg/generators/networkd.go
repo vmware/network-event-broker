@@ -167,7 +167,7 @@ func processDBusManagerMessage(n *network.Network, v *dbus.Signal) error {
 	return nil
 }
 
-func WatchNetworkdDBusEvents(n *network.Network, c *conf.Config, finished chan bool) error {
+func WatchNetworkd(n *network.Network, c *conf.Config, finished chan bool) error {
 	conn, err := dbus.ConnectSystemBus()
 	if err != nil {
 		log.Fatalf("Failed to connect to system bus: %v", err)
