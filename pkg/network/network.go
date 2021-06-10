@@ -44,7 +44,7 @@ func ConfigureNetwork(link string, n *Network) error {
 		return errors.New("not found")
 	}
 
-	existingAddresses, err := GetIPv4AddressesByLink(link)
+	existingAddresses, err := getIPv4AddressesByLink(link)
 	if err != nil {
 		log.Errorf("Failed to fetch Ip addresses of link='%s' ifindex='%d': %+v", link, err)
 		return err

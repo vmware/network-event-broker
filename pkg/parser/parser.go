@@ -41,15 +41,6 @@ func ParseIP(ip string) (net.IP, error) {
 	return a, nil
 }
 
-func ParseDNS(line string) []string {
-	s := strings.TrimSpace(line)
-	s = strings.TrimPrefix(s, "option domain-name-servers ")
-	s = strings.TrimSuffix(s, ";")
-	s = strings.Replace(s, ",", " ", -1)
-
-	return strings.SplitAfter(s, " ")
-}
-
 func ParseDHClientLease() (map[string]*Lease, error) {
 	file, err := os.OpenFile(conf.DHClientLeaseFile, os.O_RDONLY, os.ModePerm)
 	if err != nil {

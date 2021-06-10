@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	DBusProperties = "org.freedesktop.DBus.Properties"
+
 	resolveInterface      = "org.freedesktop.resolve1"
 	resolveObjectPath     = "/org/freedesktop/resolve1"
 	resolveSetLinkDNS     = resolveInterface + ".Manager.SetLinkDNS"

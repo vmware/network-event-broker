@@ -13,16 +13,27 @@ import (
 	"strings"
 
 	"github.com/godbus/dbus/v5"
+	"github.com/network-event-broker/pkg/bus"
 	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
 	"github.com/network-event-broker/pkg/system"
 )
 
+const (
+	networkInterface  = "org.freedesktop.network1"
+	networkObjectPath = "/org/freedesktop/network1"
+
+	networkInterfaceLink       = "org.freedesktop.network1.Link"
+	networkInterfaceLinkEscape = networkInterfaceLink + "/_3"
+
+	networkdLeasePath = "/run/systemd/netif/leases"
+)
+
 func executeNetworkdLinkStateScripts(link string, index int, k string, v string) error {
 	scriptDirs, err := system.ReadAllScriptDirs(conf.ConfPath)
 	if err != nil {
-		log.Debugln("Failed to find any scripts in conf dir: %+v", err)
+		log.Errorf("Failed to find any scripts in conf dir: %+v", err)
 		return err
 	}
 
@@ -45,10 +56,10 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string)
 				continue
 			}
 
-			leaseFile := path.Join("/run/systemd/netif/leases", strconv.Itoa(index))
+			leaseFile := path.Join(networkdLeasePath, strconv.Itoa(index))
 			leaseLines, err := system.ReadLines(leaseFile)
 			if err != nil {
-				log.Debugf("Failed to read lease file of link='%v'", link, err)
+				log.Debugf("Failed to read lease file of link='%+v'", link, err)
 			}
 
 			var leaseArg string
@@ -96,7 +107,7 @@ func executeNetworkdManagerScripts(k string, v string) error {
 	for _, s := range scripts {
 		script := path.Join(managerStatePath, s)
 
-		log.Debugf("Executing script '%s' in dir='%v'", script, managerStatePath)
+		log.Debugf("Executing script '%s' in dir='%s'", script, managerStatePath)
 
 		managerStateEnvArg := k + "=" + v
 		cmd := exec.Command(script)
@@ -106,7 +117,7 @@ func executeNetworkdManagerScripts(k string, v string) error {
 		)
 
 		if err := cmd.Run(); err != nil {
-			log.Errorf("Failed to execute script='%s': %v", script, err)
+			log.Errorf("Failed to execute script='%s': %+v", script, err)
 			continue
 		}
 
@@ -117,14 +128,14 @@ func executeNetworkdManagerScripts(k string, v string) error {
 }
 
 func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) error {
-	if !strings.HasPrefix(string(v.Path), "/org/freedesktop/network1/link/_3") {
+	if !strings.HasPrefix(string(v.Path), networkInterfaceLinkEscape) {
 		return nil
 	}
 
-	strIndex := strings.TrimPrefix(string(v.Path), "/org/freedesktop/network1/link/_3")
+	strIndex := strings.TrimPrefix(string(v.Path), networkInterfaceLinkEscape)
 	index, err := strconv.Atoi(strIndex)
 	if err != nil {
-		log.Errorf("Failed to convert ifindex to integer: %v", strIndex)
+		log.Errorf("Failed to convert ifindex=\"%s\" to integer: %+v", strIndex, err)
 		return nil
 	}
 
@@ -135,7 +146,7 @@ func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) 
 		switch k {
 		case "OperationalState":
 			{
-				log.Debugf("Link='%v' ifindex='%v' changed state '%s'=%s", n.LinksByIndex[index], index, k, v)
+				log.Debugf("Link='%s' ifindex='%d' changed state '%s'=%s", n.LinksByIndex[index], index, k, v)
 
 				if c.Network.Links != "" {
 					if strings.Contains(c.Network.Links, n.LinksByIndex[index]) {
@@ -176,13 +187,13 @@ func WatchNetworkd(n *network.Network, c *conf.Config, finished chan bool) error
 	defer conn.Close()
 
 	opts := []dbus.MatchOption{
-		dbus.WithMatchSender("org.freedesktop.network1"),
-		dbus.WithMatchInterface("org.freedesktop.DBus.Properties"),
+		dbus.WithMatchSender(networkInterface),
+		dbus.WithMatchInterface(bus.DBusProperties),
 		dbus.WithMatchMember("PropertiesChanged"),
 	}
 
 	if err := conn.AddMatchSignal(opts...); err != nil {
-		log.Errorf("Failed to add match signal for 'org.freedesktop.network1`: %v", err)
+		log.Errorf("Failed to add match signal for '%s`: %+v", networkInterface, err)
 		return err
 	}
 
@@ -194,11 +205,14 @@ func WatchNetworkd(n *network.Network, c *conf.Config, finished chan bool) error
 	for v := range sigChannel {
 		w := fmt.Sprintf("%v", v.Body[0])
 
-		if strings.HasPrefix(w, "org.freedesktop.network1.Link") {
+		if strings.HasPrefix(w, networkInterfaceLink) {
 			log.Debugf("Received Link DBus signal from systemd-networkd'")
+
 			go processDBusLinkMessage(n, v, c)
+
 		} else if strings.HasPrefix(w, "org.freedesktop.network1.Manager") {
 			log.Debugf("Received Manager DBus signal from systemd-networkd'")
+
 			go processDBusManagerMessage(n, v)
 		}
 	}
