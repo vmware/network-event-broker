@@ -13,6 +13,8 @@ How to run a command when get a new address is acquired via DHCP ?
  Scripts are executed when the daemon receives the relevant event from `systemd-networkd`. See [networkctl](https://www.freedesktop.org/software/systemd/man/networkctl.html).
 
 
+test 123
+
 ```bash
 ❯ networkctl list
 
