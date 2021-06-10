@@ -17,7 +17,7 @@ type Route struct {
 	Gw      string
 }
 
-func GetDefaultIpv4Gateway() (string, error) {
+func getDefaultIpv4Gateway() (string, error) {
 	routes, err := netlink.RouteList(nil, syscall.AF_INET)
 	if err != nil {
 		return "", err
@@ -36,7 +36,7 @@ func GetDefaultIpv4Gateway() (string, error) {
 	return "", errors.New("not found")
 }
 
-func GetDefaultIpv4GatewayByLink(ifIndex int) (string, error) {
+func getDefaultIpv4GatewayByLink(ifIndex int) (string, error) {
 	routes, err := netlink.RouteList(nil, syscall.AF_INET)
 	if err != nil {
 		return "", err
@@ -53,7 +53,7 @@ func GetDefaultIpv4GatewayByLink(ifIndex int) (string, error) {
 	return "", errors.New("not found")
 }
 
-func GetIpv4GatewayByLink(ifIndex int) (string, error) {
+func getIpv4GatewayByLink(ifIndex int) (string, error) {
 	routes, err := netlink.RouteList(nil, syscall.AF_INET)
 	if err != nil {
 		return "", err
@@ -70,13 +70,13 @@ func GetIpv4GatewayByLink(ifIndex int) (string, error) {
 	return "", errors.New("not found")
 }
 
-func GetIpv4Gateway(ifIndex int) (string, error) {
-	gw, err := GetDefaultIpv4GatewayByLink(ifIndex)
+func getIpv4Gateway(ifIndex int) (string, error) {
+	gw, err := getDefaultIpv4GatewayByLink(ifIndex)
 	if err != nil {
-		gw, err = GetIpv4GatewayByLink(ifIndex)
+		gw, err = getIpv4GatewayByLink(ifIndex)
 		if err != nil {
 			// Try Harder ?
-			gw, err = GetDefaultIpv4Gateway()
+			gw, err = getDefaultIpv4Gateway()
 			if err != nil {
 				return "", err
 			}
@@ -86,7 +86,7 @@ func GetIpv4Gateway(ifIndex int) (string, error) {
 	return gw, nil
 }
 
-func AddRoute(route *Route) error {
+func (route *Route) addRoute() error {
 	rt := netlink.Route{
 		LinkIndex: route.IfIndex,
 		Gw:        net.ParseIP(route.Gw).To4(),
@@ -100,7 +100,7 @@ func AddRoute(route *Route) error {
 	return nil
 }
 
-func RemoveRoute(route *Route) error {
+func (route *Route) removeRoute() error {
 	rt := netlink.Route{
 		LinkIndex: route.IfIndex,
 		Gw:        net.ParseIP(route.Gw).To4(),

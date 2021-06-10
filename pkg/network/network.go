@@ -50,7 +50,7 @@ func ConfigureNetwork(link string, n *Network) error {
 		return err
 	}
 
-	gw, err := GetIpv4Gateway(index)
+	gw, err := getIpv4Gateway(index)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func ConfigureNetwork(link string, n *Network) error {
 		Table:   ROUTE_TABLE_BASE + index,
 	}
 
-	if err = AddRoute(&rt); err != nil {
+	if err = rt.addRoute(); err != nil {
 		log.Warnf("Failed to add default gateway on link='%s' ifindex='%d' gw='%s' table='%d: %+v", link, index, gw, rt.Table, err)
 		return err
 	}

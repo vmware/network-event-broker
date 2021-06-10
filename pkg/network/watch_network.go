@@ -130,7 +130,7 @@ func (n *Network) dropConfiguration(ifIndex int, address string) {
 
 			log.Debugf("Dropping GW='%s' link='%s' ifindex='%d'  Table='%d'", rt.Gw, n.LinksByIndex[ifIndex], ifIndex, rt.Table)
 
-			RemoveRoute(rt)
+			rt.removeRoute()
 			delete(n.RoutesByIndex, ifIndex)
 		}
 	}
