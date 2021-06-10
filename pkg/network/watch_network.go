@@ -109,7 +109,7 @@ func (n *Network) dropConfiguration(ifIndex int, address string) {
 	n.Mutex.Lock()
 	defer n.Mutex.Unlock()
 
-	log.Debugf("Dropping routing rules link='%s' ifindex='%d' address='%s'", n.LinksByIndex[ifIndex], ifIndex, address)
+	log.Debugf("Dropping routing rules for address='%s' link='%s' ifindex='%d'", address, n.LinksByIndex[ifIndex], ifIndex)
 
 	rule, ok := n.RoutingRulesByAddressFrom[address]
 	if ok {

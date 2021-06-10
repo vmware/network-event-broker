@@ -2,7 +2,7 @@
  * Copyright © 2021 VMware, Inc.
  */
 
-package generators
+package listeners
 
 import (
 	"net"

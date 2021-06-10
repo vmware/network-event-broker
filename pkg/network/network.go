@@ -94,7 +94,7 @@ func (n *Network) addOneAddressRule(address string, link string, index int) erro
 
 	n.RoutingRulesByAddressFrom[address] = from
 
-	log.Debugf("Successfully added routing policy rule 'from' on link='%s' ifindex='%d' table='%d'", link, index, conf.ROUTE_TABLE_BASE+index)
+	log.Debugf("Successfully added routing policy rule for address='%s' 'from' on link='%s' ifindex='%d' table='%d'", address, link, index, conf.ROUTE_TABLE_BASE+index)
 
 	to := &RoutingRule{
 		To:    addr,
@@ -107,7 +107,7 @@ func (n *Network) addOneAddressRule(address string, link string, index int) erro
 
 	n.RoutingRulesByAddressTo[address] = to
 
-	log.Debugf("Successfully added routing policy rule 'to' on link='%s' ifindex='%d' table='%d", link, index, conf.ROUTE_TABLE_BASE+index)
+	log.Debugf("Successfully added routing policy rule for address='%s' 'to' on link='%s' ifindex='%d' table='%d", address, link, index, conf.ROUTE_TABLE_BASE+index)
 
 	return nil
 }

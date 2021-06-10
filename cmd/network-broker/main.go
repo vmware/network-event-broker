@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/network-event-broker/pkg/conf"
-	"github.com/network-event-broker/pkg/generators"
+	"github.com/network-event-broker/pkg/listeners"
 	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
 )
@@ -42,11 +42,11 @@ func main() {
 	finished := make(chan bool)
 
 	if c.System.Generator == "" || strings.Contains(c.System.Generator, "systemd-networkd") {
-		log.Infoln("Starting generator: 'systemd-netword")
-		go generators.WatchNetworkd(n, c, finished)
+		log.Infoln("Starting listener: 'systemd-netword")
+		go listeners.WatchNetworkd(n, c, finished)
 	} else {
-		log.Infoln("Starting generator: 'dhclient'")
-		go generators.WatchDHClient(n, c, finished)
+		log.Infoln("Starting listener: 'dhclient'")
+		go listeners.WatchDHClient(n, c, finished)
 	}
 
 	s := make(chan os.Signal, 1)

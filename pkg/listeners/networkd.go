@@ -2,7 +2,7 @@
  * Copyright © 2021 VMware, Inc.
  */
 
-package generators
+package listeners
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ const (
 	networkObjectPath = "/org/freedesktop/network1"
 
 	networkInterfaceLink       = "org.freedesktop.network1.Link"
-	networkInterfaceLinkEscape = networkInterfaceLink + "/_3"
+	networkInterfaceLinkEscape = networkObjectPath + "/link/_3"
 )
 
 func executeNetworkdLinkStateScripts(link string, index int, k string, v string) error {
@@ -36,7 +36,7 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string)
 	}
 
 	for _, d := range scriptDirs {
-		stateDir := strings.Trim(v, "\"") + ".d"
+		stateDir := v + ".d"
 
 		if stateDir == d {
 			scripts, err := system.ReadAllScriptInConfDir(path.Join(conf.ConfPath, d))
@@ -48,7 +48,7 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string)
 			path.Join(conf.ConfPath, d)
 			linkNameEnvArg := "LINK=" + link
 			linkIndexEnvArg := "LINKINDEX=" + strconv.Itoa(index)
-			linkStateEnvArg := k + "=" + strings.Trim(v, "\"")
+			linkStateEnvArg := k + "=" + v
 
 			if len(scripts) <= 0 {
 				continue
@@ -144,17 +144,19 @@ func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) 
 		switch k {
 		case "OperationalState":
 			{
-				log.Debugf("Link='%s' ifindex='%d' changed state '%s'=%s", n.LinksByIndex[index], index, k, v)
+				s := strings.Trim(v.String(), "\"")
+
+				log.Debugf("Link='%s' ifindex='%d' changed state '%s'='%s'", n.LinksByIndex[index], index, k, s)
 
 				if c.Network.Links != "" {
 					if strings.Contains(c.Network.Links, n.LinksByIndex[index]) {
-						executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, v.String())
+						executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s)
 					}
 				} else {
-					executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, v.String())
+					executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s)
 				}
 
-				if strings.Trim(v.String(), "\"") == "routable" && strings.Contains(c.Network.RoutingPolicyRules, n.LinksByIndex[index]) {
+				if s == "routable" && strings.Contains(c.Network.RoutingPolicyRules, n.LinksByIndex[index]) {
 					network.ConfigureNetwork(n.LinksByIndex[index], n)
 				}
 			}
@@ -168,9 +170,9 @@ func processDBusManagerMessage(n *network.Network, v *dbus.Signal) error {
 	state := v.Body[1].(map[string]dbus.Variant)
 
 	for k, v := range state {
-		log.Debugf("Manager chaged state '%v='%v'", k, v.String())
+		log.Debugf("Manager chaged state '%v='%v'", k, strings.Trim(v.String(), "\""))
 
-		executeNetworkdManagerScripts(k, v.String())
+		executeNetworkdManagerScripts(k, strings.Trim(v.String(), "\""))
 	}
 
 	return nil

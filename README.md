@@ -24,7 +24,7 @@ May 14 17:08:13 Zeus cat[273185]: LINK=ens33
 2. `dhclient`
   For `dhclient` scripts will be executed (in the dir ```routable.d```) when the `/var/lib/dhclient/dhclient.leases` file gets modified by `dhclient` and lease information is passed to the scripts as environmental arguments.
 
-Environment variables `LINK`, `LINKIFINDEX=` and DHCP lease information `DHCP_LEASE=`  passed to the scripts.
+Environment variables `LINK`, `LINKINDEX=` and DHCP lease information `DHCP_LEASE=`  passed to the scripts.
 
 #### Building from source
 ----
@@ -52,7 +52,7 @@ Specifies the log level. Takes one of `info`, `warn`, `error`, `debug` and `fata
 
 Generator= 
 ```
-Specifies the network event source to listen. Takes one of `systemd-networkd` or `dhclient`. Defaults to `systemd-networkd`.
+Specifies the network event generator source to listen. Takes one of `systemd-networkd` or `dhclient`. Defaults to `systemd-networkd`.
 
 
 The `[Network]` section takes following Keys:
