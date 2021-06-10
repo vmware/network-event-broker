@@ -13,83 +13,84 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+const (
+	MaxChannelSize = 1024
+)
+
 func WatchNetwork(n *Network) {
 	go n.watchAddresses()
 	go n.watchLinks()
 }
 
 func (n *Network) watchAddresses() {
-	for {
-		updates := make(chan netlink.AddrUpdate)
-		done := make(chan struct{})
+	updates := make(chan netlink.AddrUpdate)
+	done := make(chan struct{}, MaxChannelSize)
 
-		if err := netlink.AddrSubscribeWithOptions(updates, done, netlink.AddrSubscribeOptions{
-			ErrorCallback: func(err error) {
-				log.Errorf("Received error from IP address update subscription: %v", err)
-			},
-		}); err != nil {
-			log.Errorf("Failed to subscribe IP address update: %v", err)
+	if err := netlink.AddrSubscribeWithOptions(updates, done, netlink.AddrSubscribeOptions{
+		ErrorCallback: func(err error) {
+			log.Errorf("Received error from IP address update subscription: %v", err)
+		},
+	}); err != nil {
+		log.Errorf("Failed to subscribe IP address update: %v", err)
+	}
+
+	select {
+	case <-done:
+		log.Infoln("Address watcher failed")
+	case updates, ok := <-updates:
+		if !ok {
+			break
 		}
 
-		select {
-		case <-done:
-			log.Infoln("Address watcher failed")
-		case updates, ok := <-updates:
-			if !ok {
-				break
-			}
+		a := updates.LinkAddress.IP.String()
+		mask, _ := updates.LinkAddress.Mask.Size()
 
-			a := updates.LinkAddress.IP.String()
-			mask, _ := updates.LinkAddress.Mask.Size()
+		if strings.HasPrefix(a, "fe80") {
+			break
+		}
 
-			if strings.HasPrefix(a, "fe80") {
-				continue
-			}
+		ip := a + "/" + strconv.Itoa(mask)
 
-			ip := a + "/" + strconv.Itoa(mask)
+		log.Infof("Received IP update: %v", updates)
 
-			log.Infof("Received IP update: %v", updates)
+		if updates.NewAddr {
+			log.Infof("IP address='%s' added to link ifindex='%d'", ip, updates.LinkIndex)
 
-			if updates.NewAddr {
-				log.Infof("IP address='%s' added to link ifindex='%d'", ip, updates.LinkIndex)
+			n.addOneAddressRule(ip, n.LinksByIndex[updates.LinkIndex], updates.LinkIndex)
+		} else {
+			log.Infof("IP address='%s' removed from link ifindex='%d'", ip, updates.LinkIndex)
 
-				n.addOneAddressRule(ip, n.LinksByIndex[updates.LinkIndex], updates.LinkIndex)
-			} else {
-				log.Infof("IP address='%s' removed from link ifindex='%d'", ip, updates.LinkIndex)
+			log.Debugf("Dropping configuration link ifindex='%d' address='%s'", updates.LinkIndex, ip)
 
-				log.Debugf("Dropping configuration link ifindex='%d' address='%s'", updates.LinkIndex, ip)
-
-				n.dropConfiguration(updates.LinkIndex, ip)
-			}
+			n.dropConfiguration(updates.LinkIndex, ip)
 		}
 	}
+
 }
 
 func (n *Network) watchLinks() {
-	for {
-		updates := make(chan netlink.LinkUpdate)
-		done := make(chan struct{})
+	updates := make(chan netlink.LinkUpdate)
+	done := make(chan struct{}, MaxChannelSize)
 
-		if err := netlink.LinkSubscribeWithOptions(updates, done, netlink.LinkSubscribeOptions{
-			ErrorCallback: func(err error) {
-				log.Errorf("Received error from link update subscription: %v", err)
-			},
-		}); err != nil {
-			log.Errorf("Failed to subscribe link update: %v", err)
+	if err := netlink.LinkSubscribeWithOptions(updates, done, netlink.LinkSubscribeOptions{
+		ErrorCallback: func(err error) {
+			log.Errorf("Received error from link update subscription: %v", err)
+		},
+	}); err != nil {
+		log.Errorf("Failed to subscribe link update: %v", err)
+	}
+
+	select {
+	case <-done:
+		log.Infoln("Link watcher failed")
+	case updates, ok := <-updates:
+		if !ok {
+			break
 		}
 
-		select {
-		case <-done:
-			log.Infoln("Link watcher failed")
-		case updates, ok := <-updates:
-			if !ok {
-				break
-			}
+		log.Infof("Received Link update: %v", updates)
 
-			log.Infof("Received Link update: %v", updates)
-
-			n.updateLink(updates)
-		}
+		n.updateLink(updates)
 	}
 }
 
