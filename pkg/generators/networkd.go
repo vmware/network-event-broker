@@ -39,7 +39,7 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string)
 			path.Join(conf.ConfPath, d)
 			linkNameEnvArg := "LINK=" + link
 			linkIndexEnvArg := "LINKINDEX=" + strconv.Itoa(index)
-			linkStateEnvArg := k + "=" + v
+			linkStateEnvArg := k + "=" + strings.Trim(v, "\"")
 
 			if len(scripts) <= 0 {
 				continue

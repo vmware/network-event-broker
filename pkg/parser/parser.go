@@ -106,7 +106,6 @@ func ParseDHClientLease() (map[string]*Lease, error) {
 			s = strings.ReplaceAll(s, ",", "")
 			lease.DomainSearch = strings.Split(s, "\"")
 		}
-
 	}
 
 	return leases, nil

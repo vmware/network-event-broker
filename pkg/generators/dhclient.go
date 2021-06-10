@@ -147,6 +147,7 @@ func WatchDHClient(n *network.Network, c *conf.Config, finished chan bool) {
 	defer watcher.Close()
 
 	log.Infoln("Listening to DHClient events")
+
 	// Try once incase dhclient already have the leases
 	TaskDHClient(n, c)
 

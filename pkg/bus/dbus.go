@@ -16,6 +16,7 @@ const (
 	resolveObjectPath     = "/org/freedesktop/resolve1"
 	resolveSetLinkDNS     = resolveInterface + ".Manager.SetLinkDNS"
 	resolveSetLinkDomains = resolveInterface + ".Manager.SetLinkDomains"
+	resolveReventLink     = resolveInterface + ".Revert"
 
 	hostnameInterface   = "org.freedesktop.hostname1"
 	hostnameObjectPath  = "/org/freedesktop/hostname1"
@@ -47,7 +48,7 @@ func SetResolveDNS(dns []DnsServer, index int) error {
 		return fmt.Errorf("failed to set DNS servers: %w", err)
 	}
 
-	log.Debugln("Successfully set DNS servers")
+	log.Debugf("Successfully set DNS servers ifindex='%d'", index)
 
 	return nil
 }
@@ -59,14 +60,35 @@ func SetResolveDomain(dnsDomains []Domain, index int) error {
 	}
 	defer conn.Close()
 
+	log.Debugf("Setting DNS domains ifindex='%d'", index)
+
 	obj := conn.Object(resolveInterface, resolveObjectPath)
 	err = obj.Call(resolveSetLinkDomains, 0, index, dnsDomains).Store()
 	if err != nil {
 		return fmt.Errorf("failed to set DNS domains: %+v: %v", dnsDomains, err)
 	}
 
-	log.Debugln("Successfully set DNS domain")
+	log.Debugf("Successfully set DNS domain ifindex='%d'", index)
 
+	return nil
+}
+
+func RevertDNSLink(index int) error {
+	conn, err := dbus.ConnectSystemBus()
+	if err != nil {
+		return fmt.Errorf("failed to connect to system bus: %v", err)
+	}
+	defer conn.Close()
+
+	log.Debugf("Reverting DNS domains ifindex='%d'", index)
+
+	obj := conn.Object(resolveInterface, resolveObjectPath)
+	err = obj.Call(resolveReventLink, 0, index, 0).Store()
+	if err != nil {
+		return fmt.Errorf("failed to revert link='%d' DNS: %v", index, err)
+	}
+
+	log.Debugf("Successfully revert DNS ifindex='%d'", index)
 	return nil
 }
 

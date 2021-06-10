@@ -1,7 +1,10 @@
 ### network-event-broker
 ----
 A daemon configures network and executes scripts on network events such as `systemd-networkd's` [DBus](https://www.freedesktop.org/wiki/Software/dbus/) events,
-`dhclient` gains lease lease. It also watches the when an address getting added/removed/modified, links added/removed etc.
+`dhclient` gains lease lease. It also watches when
+
+1. An address getting added/removed/modified.
+2. Links added/removed.
 
 ```network-event-broker``` creates link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` and manager state dir ```manager.d``` in ```/etc/network-event-broker```. Executable scripts can be placed into directories.
 
@@ -14,17 +17,6 @@ How to run a command when get a new address is acquired via DHCP ?
 
 
 ```bash
-❯ networkctl list
-
-IDX LINK    TYPE     OPERATIONAL SETUP
-  1 lo      loopback carrier     unmanaged
-  2 ens33   ether    routable    configured
-  3 ens37   ether    routable    unmanaged
-
-3 links listed.
-```
-
-```bash
 May 14 17:08:13 Zeus cat[273185]: OperationalState="routable"
 May 14 17:08:13 Zeus cat[273185]: LINK=ens33
 ```
@@ -32,7 +24,7 @@ May 14 17:08:13 Zeus cat[273185]: LINK=ens33
 2. `dhclient`
   For `dhclient` scripts will be executed (in the dir ```routable.d```) when the `/var/lib/dhclient/dhclient.leases` file gets modified by `dhclient` and lease information is passed to the scripts as environmental arguments.
 
-Enviroment variables `LINK`, `LINKIFINDEX=` and DHCP lease information `DHCP_LEASE=`  passed to the scripts.
+Environment variables `LINK`, `LINKIFINDEX=` and DHCP lease information `DHCP_LEASE=`  passed to the scripts.
 
 #### Building from source
 ----
@@ -80,17 +72,17 @@ A whitespace-separated list of links for which routing policy rules would be con
 ```bash
 UseDNS=
 ```
-A boolean. When true, the DNS server will be se to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
+A boolean. When true, the DNS server will be se to `systemd-resolved` vis DBus. Applies only for DHClient. Defaults to false.
 
 ```bash
 UseDomain=
 ```
-A boolean. When true, the DNS domains will be sent to systemd-resolved vis DBus. Applies only for DHClient. Defaults to false.
+A boolean. When true, the DNS domains will be sent to `systemd-resolved` vis DBus. Applies only for DHClient. Defaults to false.
 
 ```bash
 UseHostname=
 ```
-A boolean. When true, the host name be sent to systemd-hostnamed vis DBus. Applies only for DHClient. Defaults to false.
+A boolean. When true, the host name be sent to `systemd-hostnamed` vis DBus. Applies only for DHClient. Defaults to false.
 
 ```bash
 ❯ sudo cat /etc/network-broker/network-broker.toml 
