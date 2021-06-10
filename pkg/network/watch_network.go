@@ -6,6 +6,7 @@ package network
 
 import (
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/network-event-broker/pkg/log"
@@ -40,6 +41,10 @@ func (n *Network) watchAddresses() {
 
 			a := updates.LinkAddress.IP.String()
 			mask, _ := updates.LinkAddress.Mask.Size()
+
+			if strings.HasPrefix(a, "fe80") {
+				continue
+			}
 
 			ip := a + "/" + strconv.Itoa(mask)
 
