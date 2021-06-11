@@ -137,7 +137,7 @@ func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) 
 		return nil
 	}
 
-	log.Debugf("Received DBus signal from systemd-networkd for ifindex='%d' link='%s'", index, n.LinksByIndex[index])
+	log.Debugf("Received DBus signal from systemd-networkd for ifindex='%d'", index)
 
 	linkState := v.Body[1].(map[string]dbus.Variant)
 	for k, v := range linkState {
@@ -170,9 +170,11 @@ func processDBusManagerMessage(n *network.Network, v *dbus.Signal) error {
 	state := v.Body[1].(map[string]dbus.Variant)
 
 	for k, v := range state {
-		log.Debugf("Manager chaged state '%v='%v'", k, strings.Trim(v.String(), "\""))
+		s := strings.Trim(v.String(), "\"")
 
-		executeNetworkdManagerScripts(k, strings.Trim(v.String(), "\""))
+		log.Debugf("Manager chaged state '%v='%v'", k, s)
+
+		executeNetworkdManagerScripts(k, s)
 	}
 
 	return nil
