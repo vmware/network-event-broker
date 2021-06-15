@@ -61,8 +61,8 @@ func getIpv4GatewayByLink(ifIndex int) (string, error) {
 
 	for _, route := range routes {
 		if route.LinkIndex == ifIndex {
-			if route.Gw != nil && route.Gw.To4().String() != "" {
-				return route.Gw.To4().String(), nil
+			if route.Dst != nil && route.Dst.String() != "0.0.0.0/0" {
+				return route.Dst.String(), nil
 			}
 		}
 	}
@@ -75,7 +75,6 @@ func getIpv4Gateway(ifIndex int) (string, error) {
 	if err != nil {
 		gw, err = getIpv4GatewayByLink(ifIndex)
 		if err != nil {
-			// Try Harder ?
 			gw, err = getDefaultIpv4Gateway()
 			if err != nil {
 				return "", err
