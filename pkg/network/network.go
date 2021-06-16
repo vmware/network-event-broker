@@ -45,31 +45,31 @@ func ConfigureNetwork(link string, n *Network) error {
 		return errors.New("not found")
 	}
 
+	gw, err := GetIpv4Gateway(index)
+	if err != nil {
+		log.Warnf("Failed to find default gateway on link='%s' ifindex='%d' gw='%s'", link, index, err)
+	} else {
+		rt := Route{
+			IfIndex: index,
+			Gw:      gw,
+			Table:   conf.ROUTE_TABLE_BASE + index,
+		}
+
+		if err = rt.addRoute(); err != nil {
+			log.Warnf("Failed to add default gateway on link='%s' ifindex='%d' gw='%s' table='%d: %+v", link, index, gw, rt.Table, err)
+			return err
+		}
+
+		n.RoutesByIndex[index] = &rt
+
+		log.Debugf("Successfully added default gateway='%s' on link='%s' ifindex='%d' table='%d", gw, link, index, rt.Table)
+	}
+
 	existingAddresses, err := getIPv4AddressesByLink(link)
 	if err != nil {
 		log.Errorf("Failed to fetch Ip addresses of link='%s' ifindex='%d': %+v", link, err)
 		return err
 	}
-
-	gw, err := getIpv4Gateway(index)
-	if err != nil {
-		return err
-	}
-
-	rt := Route{
-		IfIndex: index,
-		Gw:      gw,
-		Table:   conf.ROUTE_TABLE_BASE + index,
-	}
-
-	if err = rt.addRoute(); err != nil {
-		log.Warnf("Failed to add default gateway on link='%s' ifindex='%d' gw='%s' table='%d: %+v", link, index, gw, rt.Table, err)
-		return err
-	}
-
-	n.RoutesByIndex[index] = &rt
-
-	log.Debugf("Successfully added default gateway='%s' on link='%s' ifindex='%d' table='%d", gw, link, index, rt.Table)
 
 	for address := range existingAddresses {
 		if err := n.addOneAddressRule(address, link, index); err != nil {

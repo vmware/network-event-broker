@@ -29,10 +29,10 @@ var (
 var Level string
 
 func initDefault() {
-	logInfo = log.New(os.Stdout, LogLevelInfo, log.LstdFlags)
-	logWarn = log.New(os.Stdout, LogLevelWarn, log.LstdFlags)
-	logError = log.New(os.Stderr, LogLevelError, log.LstdFlags)
-	logFatal = log.New(os.Stdout, LogLevelFatal, log.LstdFlags)
+	logInfo = log.New(os.Stdout, "[ "+LogLevelInfo+" ] ", log.LstdFlags)
+	logWarn = log.New(os.Stdout, "[ "+LogLevelWarn+" ] ", log.LstdFlags)
+	logError = log.New(os.Stderr, "[ "+LogLevelError+" ] ", log.LstdFlags)
+	logFatal = log.New(os.Stdout, "[ "+LogLevelFatal+" ] ", log.LstdFlags)
 }
 
 func Init() {
@@ -43,27 +43,27 @@ func SetLevel(level string) {
 	switch level {
 	case LogLevelDebug:
 
-		logDebug = log.New(os.Stdout, "["+LogLevelDebug+"] ", log.LstdFlags)
-		logInfo = log.New(os.Stdout, "["+LogLevelInfo+"] ", log.LstdFlags)
-		logWarn = log.New(os.Stdout, "["+LogLevelWarn+"] ", log.LstdFlags)
-		logError = log.New(os.Stderr, "["+LogLevelError+"] ", log.LstdFlags)
-		logFatal = log.New(os.Stdout, "["+LogLevelFatal+"] ", log.LstdFlags)
+		logDebug = log.New(os.Stdout, "[ "+LogLevelDebug+" ] ", log.LstdFlags)
+		logInfo = log.New(os.Stdout, "[ "+LogLevelInfo+" ] ", log.LstdFlags)
+		logWarn = log.New(os.Stdout, "[ "+LogLevelWarn+" ] ", log.LstdFlags)
+		logError = log.New(os.Stderr, "[ "+LogLevelError+" ] ", log.LstdFlags)
+		logFatal = log.New(os.Stdout, "["+LogLevelFatal+" ] ", log.LstdFlags)
 
 	case LogLevelInfo:
 		initDefault()
 
 	case LogLevelWarn:
-		logWarn = log.New(os.Stdout, LogLevelWarn, log.LstdFlags)
-		logError = log.New(os.Stderr, LogLevelError, log.LstdFlags)
-		logFatal = log.New(os.Stdout, LogLevelFatal, log.LstdFlags)
+		logWarn = log.New(os.Stdout, "[ "+LogLevelWarn+" ] ", log.LstdFlags)
+		logError = log.New(os.Stderr, "[ "+LogLevelError+" ] ", log.LstdFlags)
+		logFatal = log.New(os.Stdout, "[ "+LogLevelFatal+" ] ", log.LstdFlags)
 
 	case LogLevelError:
-		logError = log.New(os.Stderr, LogLevelError, log.LstdFlags)
-		logFatal = log.New(os.Stdout, LogLevelFatal, log.LstdFlags)
+		logError = log.New(os.Stderr, "[ "+LogLevelError+" ] ", log.LstdFlags)
+		logFatal = log.New(os.Stdout, "[ "+LogLevelFatal+" ] ", log.LstdFlags)
 
 	case LogLevelFatal:
-		logError = log.New(ioutil.Discard, LogLevelError, log.LstdFlags)
-		logFatal = log.New(os.Stdout, LogLevelFatal, log.LstdFlags)
+		logError = log.New(ioutil.Discard, "[ "+LogLevelError+" ] ", log.LstdFlags)
+		logFatal = log.New(os.Stdout, "[ "+LogLevelFatal+" ] ", log.LstdFlags)
 
 	default:
 		initDefault()
@@ -95,13 +95,13 @@ func Infoln(v ...interface{}) {
 }
 
 func Warnf(format string, v ...interface{}) {
-	if logError != nil {
+	if logWarn != nil {
 		logError.Printf(format, v...)
 	}
 }
 
 func Warnln(v ...interface{}) {
-	if logError != nil {
+	if logWarn != nil {
 		logError.Println(v...)
 	}
 }
