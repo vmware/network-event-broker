@@ -47,23 +47,24 @@ func ConfigureNetwork(link string, n *Network) error {
 
 	gw, err := GetIpv4Gateway(index)
 	if err != nil {
-		log.Warnf("Failed to find default gateway on link='%s' ifindex='%d' gw='%s'", link, index, err)
-	} else {
-		rt := Route{
-			IfIndex: index,
-			Gw:      gw,
-			Table:   conf.ROUTE_TABLE_BASE + index,
-		}
-
-		if err = rt.addRoute(); err != nil {
-			log.Warnf("Failed to add default gateway on link='%s' ifindex='%d' gw='%s' table='%d: %+v", link, index, gw, rt.Table, err)
-			return err
-		}
-
-		n.RoutesByIndex[index] = &rt
-
-		log.Debugf("Successfully added default gateway='%s' on link='%s' ifindex='%d' table='%d", gw, link, index, rt.Table)
+		log.Warnf("Failed to find gateway on link='%s' ifindex='%d' gw='%s'", link, index, err)
+		return err
 	}
+
+	rt := Route{
+		IfIndex: index,
+		Gw:      gw,
+		Table:   conf.ROUTE_TABLE_BASE + index,
+	}
+
+	if err = rt.RouteAdd(); err != nil {
+		log.Warnf("Failed to add default gateway on link='%s' ifindex='%d' gw='%s' table='%d: %+v", link, index, gw, rt.Table, err)
+		return err
+	}
+
+	n.RoutesByIndex[index] = &rt
+
+	log.Debugf("Successfully added default gateway='%s' on link='%s' ifindex='%d' table='%d", gw, link, index, rt.Table)
 
 	existingAddresses, err := getIPv4AddressesByLink(link)
 	if err != nil {
@@ -72,7 +73,7 @@ func ConfigureNetwork(link string, n *Network) error {
 	}
 
 	for address := range existingAddresses {
-		if err := n.addOneAddressRule(address, link, index); err != nil {
+		if err := n.oneAddressRuleAdd(address, link, index); err != nil {
 			continue
 		}
 	}
@@ -80,7 +81,7 @@ func ConfigureNetwork(link string, n *Network) error {
 	return nil
 }
 
-func (n *Network) addOneAddressRule(address string, link string, index int) error {
+func (n *Network) oneAddressRuleAdd(address string, link string, index int) error {
 	addr := strings.TrimSuffix(strings.SplitAfter(address, "/")[0], "/")
 
 	from := &RoutingRule{
@@ -88,7 +89,7 @@ func (n *Network) addOneAddressRule(address string, link string, index int) erro
 		Table: conf.ROUTE_TABLE_BASE + index,
 	}
 
-	if err := from.addRoutingPolicyRule(); err != nil {
+	if err := from.RoutingPolicyRuleAdd(); err != nil {
 		return err
 	}
 
@@ -101,7 +102,7 @@ func (n *Network) addOneAddressRule(address string, link string, index int) erro
 		Table: conf.ROUTE_TABLE_BASE + index,
 	}
 
-	if err := to.addRoutingPolicyRule(); err != nil {
+	if err := to.RoutingPolicyRuleAdd(); err != nil {
 		return err
 	}
 

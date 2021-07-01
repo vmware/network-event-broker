@@ -15,7 +15,7 @@ type RoutingRule struct {
 	Table int
 }
 
-func (rule *RoutingRule) addRoutingPolicyRule() error {
+func (rule *RoutingRule) RoutingPolicyRuleAdd() error {
 	links, err := netlink.LinkList()
 	if err != nil {
 		return nil
@@ -55,7 +55,7 @@ func (rule *RoutingRule) addRoutingPolicyRule() error {
 	return nil
 }
 
-func (rule *RoutingRule) removeRoutingPolicyRule() error {
+func (rule *RoutingRule) RoutingPolicyRuleRemove() error {
 	r := netlink.NewRule()
 	r.Table = rule.Table
 

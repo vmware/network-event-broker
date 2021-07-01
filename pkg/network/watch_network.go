@@ -57,7 +57,7 @@ func (n *Network) watchAddresses() {
 			if updates.NewAddr {
 				log.Infof("IP address='%s' added to link ifindex='%d'", ip, updates.LinkIndex)
 
-				n.addOneAddressRule(ip, n.LinksByIndex[updates.LinkIndex], updates.LinkIndex)
+				n.oneAddressRuleAdd(ip, n.LinksByIndex[updates.LinkIndex], updates.LinkIndex)
 			} else {
 				log.Infof("IP address='%s' removed from link ifindex='%d'", ip, updates.LinkIndex)
 
@@ -67,7 +67,6 @@ func (n *Network) watchAddresses() {
 			}
 		}
 	}
-
 }
 
 func (n *Network) watchLinks() {
@@ -127,13 +126,13 @@ func (n *Network) dropConfiguration(ifIndex int, address string) {
 
 	rule, ok := n.RoutingRulesByAddressFrom[address]
 	if ok {
-		rule.removeRoutingPolicyRule()
+		rule.RoutingPolicyRuleRemove()
 		delete(n.RoutingRulesByAddressFrom, address)
 	}
 
 	rule, ok = n.RoutingRulesByAddressTo[address]
 	if ok {
-		rule.removeRoutingPolicyRule()
+		rule.RoutingPolicyRuleRemove()
 		delete(n.RoutingRulesByAddressTo, address)
 	}
 
@@ -144,7 +143,7 @@ func (n *Network) dropConfiguration(ifIndex int, address string) {
 
 			log.Debugf("Dropping GW='%s' link='%s' ifindex='%d'  Table='%d'", rt.Gw, n.LinksByIndex[ifIndex], ifIndex, rt.Table)
 
-			rt.removeRoute()
+			rt.RouteRemove()
 			delete(n.RoutesByIndex, ifIndex)
 		}
 	}
