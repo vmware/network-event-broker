@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: Apache-2.0
- * Copyright © 2021 VMware, Inc.
- */
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021 VMware, Inc.
+
 
 package listeners
 
@@ -15,10 +15,10 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/network-event-broker/pkg/bus"
 	"github.com/network-event-broker/pkg/conf"
-	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
 	"github.com/network-event-broker/pkg/parser"
 	"github.com/network-event-broker/pkg/system"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )
 

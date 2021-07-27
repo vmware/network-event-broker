@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: Apache-2.0
- * Copyright © 2021 VMware, Inc.
- */
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021 VMware, Inc.
+
 
 package network
 
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/network-event-broker/pkg/log"
+	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
 

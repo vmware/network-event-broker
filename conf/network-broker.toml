@@ -1,5 +1,6 @@
 [System]
 LogLevel="info"
+LogFormat="text"
 Generator="systemd-networkd"
 
 [Network]

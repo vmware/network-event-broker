@@ -1,6 +1,5 @@
-/* SPDX-License-Identifier: Apache-2.0
- * Copyright © 2021 VMware, Inc.
- */
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021 VMware, Inc.
 
 package network
 
@@ -10,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/network-event-broker/pkg/conf"
-	"github.com/network-event-broker/pkg/log"
+	log "github.com/sirupsen/logrus"
 )
 
 type Network struct {

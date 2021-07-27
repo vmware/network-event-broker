@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: Apache-2.0
- * Copyright © 2021 VMware, Inc.
- */
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021 VMware, Inc.
+
 
 package main
 
@@ -12,13 +12,11 @@ import (
 
 	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/listeners"
-	"github.com/network-event-broker/pkg/log"
 	"github.com/network-event-broker/pkg/network"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	log.Init()
-
 	c, err := conf.Parse()
 	if err != nil {
 		log.Warnf("Failed to parse configuration: %v", err)

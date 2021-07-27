@@ -1,6 +1,6 @@
-//SPDX-License-Identifier: Apache-2.0
-// Copyright © 2021 VMware, Inc.
-//
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2021 VMware, Inc.
+
 
 package bus
 
@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/godbus/dbus/v5"
-	"github.com/network-event-broker/pkg/log"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
