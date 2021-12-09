@@ -4,13 +4,16 @@
 package listeners
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jaypipes/ghw"
 
@@ -30,6 +33,8 @@ const (
 
 	networkInterfaceLink       = "org.freedesktop.network1.Link"
 	networkInterfaceLinkEscape = networkObjectPath + "/link/_3"
+
+	defaultRequestTimeout = 5 * time.Second
 )
 
 type LinkDescribe struct {
@@ -54,6 +59,10 @@ type LinkDescribe struct {
 	DNS              []string `json:"DNS"`
 	Domains          []string `json:"Domains"`
 	NTP              []string `json:"NTP"`
+}
+
+type LinksDescribe struct {
+	Interfaces []LinkDescribe
 }
 
 func fillOneLink(link netlink.Link) *LinkDescribe {
@@ -95,13 +104,39 @@ func fillOneLink(link netlink.Link) *LinkDescribe {
 	return &l
 }
 
-func buildLinkMessage(link string) (*LinkDescribe, error) {
+func buildLinkMessageFallback(link string) (*LinkDescribe, error) {
 	l, err := netlink.LinkByName(link)
 	if err != nil {
 		return nil, err
 	}
 
 	return fillOneLink(l), nil
+}
+
+func acquireLink(link string) (*LinkDescribe, error) {
+	c, err := NewSDConnection()
+	if err != nil {
+		log.Errorf("Failed to establish connection to the system bus: %s", err)
+		return nil, err
+	}
+	defer c.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), defaultRequestTimeout)
+	defer cancel()
+
+	links, err := c.DBusLinkDescribe(ctx)
+	if err != nil {
+		return buildLinkMessageFallback(link)
+	}
+
+	for _, l := range links.Interfaces {
+		if l.Name == link {
+			return &l, nil
+		}
+
+	}
+
+	return nil, errors.New("not found")
 }
 
 func executeNetworkdLinkStateScripts(link string, index int, k string, v string, c *conf.Config) error {
@@ -144,11 +179,13 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string,
 
 			var jsonData string
 			if c.Network.EmitJSON {
-				m, _ := buildLinkMessage(link)
-				j, _ := json.Marshal(m)
-				jsonData = "JSON=" + string(j)
+				m, err := acquireLink(link)
+				if err == nil {
+					j, _ := json.Marshal(m)
+					jsonData = "JSON=" + string(j)
 
-				log.Debugf("JSON : %v\n", jsonData)
+					log.Debugf("JSON : %v\n", jsonData)
+				}
 			}
 
 			for _, s := range scripts {
@@ -167,7 +204,6 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string,
 
 				if c.Network.EmitJSON {
 					cmd.Env = append(cmd.Env, jsonData)
-					fmt.Println("++++" + jsonData)
 				}
 
 				if err := cmd.Run(); err != nil {
