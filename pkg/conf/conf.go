@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// App Version
 const (
 	Version  = "0.1"
 	ConfPath = "/etc/network-broker/"
@@ -36,6 +35,7 @@ type Network struct {
 	UseDNS             bool   `mapstructure:"UseDNS"`
 	UseDomain          bool   `mapstructure:"UseDomain"`
 	UseHostname        bool   `mapstructure:"UseHostname"`
+	EmitJSON           bool   `mapstructure:"EmitJSON"`
 }
 
 type System struct {
