@@ -70,6 +70,40 @@ RoutingPolicyRules=
 A whitespace-separated list of links for which routing policy rules would be configured per address. When set, `network-broker` automatically adds routing policy rules `from` and `to` in another routing table `(ROUTE_TABLE_BASE = 9999 + ifindex)`. When these addresses are removed, the routing policy rules are also dropped. Defaults to unset.
 
 ```bash
+EmitJSON=
+```
+A boolean. When true, JSON format data is will be emitted via envorment variable `JSON=` Applies only for `systemd-networkd`. Defaults to true.
+
+```json
+{
+   "AddressState":"routable",
+   "AlternativeNames":null,
+   "CarrierState":"carrier",
+   "Driver":"e1000",
+   "IPv4AddressState":"routable",
+   "IPv6AddressState":"degraded",
+   "Index":2,
+   "LinkFile":"",
+   "Model":"82545EM Gigabit Ethernet Controller (Copper)",
+   "Name":"ens33",
+   "OnlineState":"online",
+   "OperationalState":"routable",
+   "Path":"pci-0000:02:01.0",
+   "SetupState":"configured",
+   "Type":"ether",
+   "Vendor":"Intel Corporation",
+   "Manufacturer":"",
+   "NetworkFile":"/etc/systemd/network/10-ens33.network",
+   "DNS":[
+      "172.16.130.2"
+   ],
+   "Domains":null,
+   "NTP":null
+}
+
+```
+
+```bash
 UseDNS=
 ```
 A boolean. When true, the DNS server will be se to `systemd-resolved` vis DBus. Applies only for DHClient. Defaults to false.
@@ -88,13 +122,14 @@ A boolean. When true, the host name be sent to `systemd-hostnamed` vis DBus. App
 ❯ sudo cat /etc/network-broker/network-broker.toml 
 [System]
 LogLevel="debug"
-Generator="dhclient"
+Generator="systemd-networks"
 
 [Network]
-Links="ens33 ens37"
-RoutingPolicyRules="ens33 ens37"
+Links="eth0 eth1"
+RoutingPolicyRules="eth0 eth1"
 UseDNS="true"
 UseDomain="true"
+EmitJSON="true"
 
 ```
 

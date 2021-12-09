@@ -4,5 +4,6 @@ LogFormat="text"
 Generator="systemd-networkd"
 
 [Network]
-Links="ens33 ens37"
-RoutingPolicyRules="ens33 ens37"
+Links="eth0 eth1"
+RoutingPolicyRules="eth0 eth1"
+EmitJSON=true
