@@ -72,7 +72,7 @@ A whitespace-separated list of links for which routing policy rules would be con
 ```bash
 EmitJSON=
 ```
-A boolean. When true, JSON format data is will be emitted via envorment variable `JSON=` Applies only for `systemd-networkd`. Defaults to true.
+A boolean. When true, JSON format data will be emitted via envorment variable `JSON=` Applies only for `systemd-networkd`. Defaults to true.
 
 ```json
 {
