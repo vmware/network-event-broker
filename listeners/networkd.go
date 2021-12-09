@@ -4,6 +4,7 @@
 package listeners
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,12 +12,16 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jaypipes/ghw"
+
 	"github.com/godbus/dbus/v5"
 	"github.com/network-event-broker/pkg/bus"
 	"github.com/network-event-broker/pkg/conf"
+	"github.com/network-event-broker/pkg/configfile"
 	"github.com/network-event-broker/pkg/network"
 	"github.com/network-event-broker/pkg/system"
 	log "github.com/sirupsen/logrus"
+	"github.com/vishvananda/netlink"
 )
 
 const (
@@ -27,7 +32,79 @@ const (
 	networkInterfaceLinkEscape = networkObjectPath + "/link/_3"
 )
 
-func executeNetworkdLinkStateScripts(link string, index int, k string, v string) error {
+type LinkDescribe struct {
+	AddressState     string   `json:"AddressState"`
+	AlternativeNames []string `json:"AlternativeNames"`
+	CarrierState     string   `json:"CarrierState"`
+	Driver           string   `json:"Driver"`
+	IPv4AddressState string   `json:"IPv4AddressState"`
+	IPv6AddressState string   `json:"IPv6AddressState"`
+	Index            int      `json:"Index"`
+	LinkFile         string   `json:"LinkFile"`
+	Model            string   `json:"Model"`
+	Name             string   `json:"Name"`
+	OnlineState      string   `json:"OnlineState"`
+	OperationalState string   `json:"OperationalState"`
+	Path             string   `json:"Path"`
+	SetupState       string   `json:"SetupState"`
+	Type             string   `json:"Type"`
+	Vendor           string   `json:"Vendor"`
+	Manufacturer     string   `json:"Manufacturer"`
+	NetworkFile      string   `json:"NetworkFile,omitempty"`
+	DNS              []string `json:"DNS"`
+	Domains          []string `json:"Domains"`
+	NTP              []string `json:"NTP"`
+}
+
+func fillOneLink(link netlink.Link) *LinkDescribe {
+	l := LinkDescribe{
+		Index: link.Attrs().Index,
+		Name:  link.Attrs().Name,
+		Type:  link.Attrs().EncapType,
+	}
+
+	l.AddressState, _ = ParseLinkAddressState(link.Attrs().Index)
+	l.IPv4AddressState, _ = ParseLinkIPv4AddressState(link.Attrs().Index)
+	l.IPv6AddressState, _ = ParseLinkIPv6AddressState(link.Attrs().Index)
+	l.CarrierState, _ = ParseLinkCarrierState(link.Attrs().Index)
+	l.OnlineState, _ = ParseLinkOnlineState(link.Attrs().Index)
+	l.OperationalState, _ = ParseLinkOperationalState(link.Attrs().Index)
+	l.SetupState, _ = ParseLinkSetupState(link.Attrs().Index)
+	l.NetworkFile, _ = ParseLinkNetworkFile(link.Attrs().Index)
+	l.DNS, _ = ParseLinkDNS(link.Attrs().Index)
+	l.Domains, _ = ParseLinkDomains(link.Attrs().Index)
+	l.NTP, _ = ParseLinkNTP(link.Attrs().Index)
+
+	c, err := configfile.ParseKeyFromSectionString(path.Join("/sys/class/net", link.Attrs().Name, "device/uevent"), "", "PCI_SLOT_NAME")
+	if err == nil {
+		pci, err := ghw.PCI()
+		if err == nil {
+			dev := pci.GetDevice(c)
+
+			l.Model = dev.Product.Name
+			l.Vendor = dev.Vendor.Name
+			l.Path = "pci-" + dev.Address
+		}
+	}
+
+	driver, err := configfile.ParseKeyFromSectionString(path.Join("/sys/class/net", link.Attrs().Name, "device/uevent"), "", "DRIVER")
+	if err == nil {
+		l.Driver = driver
+	}
+
+	return &l
+}
+
+func buildLinkMessage(link string) (*LinkDescribe, error) {
+	l, err := netlink.LinkByName(link)
+	if err != nil {
+		return nil, err
+	}
+
+	return fillOneLink(l), nil
+}
+
+func executeNetworkdLinkStateScripts(link string, index int, k string, v string, c *conf.Config) error {
 	scriptDirs, err := system.ReadAllScriptDirs(conf.ConfPath)
 	if err != nil {
 		log.Errorf("Failed to find any scripts in conf dir: %+v", err)
@@ -65,6 +142,15 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string)
 				leaseArg += strings.Join(leaseLines, " ")
 			}
 
+			var jsonData string
+			if c.Network.EmitJSON {
+				m, _ := buildLinkMessage(link)
+				j, _ := json.Marshal(m)
+				jsonData = "JSON=" + string(j)
+
+				log.Debugf("JSON : %v\n", jsonData)
+			}
+
 			for _, s := range scripts {
 				script := path.Join(conf.ConfPath, d, s)
 
@@ -78,6 +164,11 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string)
 					linkStateEnvArg,
 					leaseArg,
 				)
+
+				if c.Network.EmitJSON {
+					cmd.Env = append(cmd.Env, jsonData)
+					fmt.Println("++++" + jsonData)
+				}
 
 				if err := cmd.Run(); err != nil {
 					log.Errorf("Failed to execute script='%s': %v", script, err)
@@ -149,10 +240,10 @@ func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) 
 
 				if c.Network.Links != "" {
 					if strings.Contains(c.Network.Links, n.LinksByIndex[index]) {
-						executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s)
+						executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s, c)
 					}
 				} else {
-					executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s)
+					executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s, c)
 				}
 
 				if s == "routable" && strings.Contains(c.Network.RoutingPolicyRules, n.LinksByIndex[index]) {

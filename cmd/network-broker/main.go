@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/network-event-broker/pkg/conf"
-	"github.com/network-event-broker/pkg/listeners"
+	"github.com/network-event-broker/listeners"
 	"github.com/network-event-broker/pkg/network"
 	log "github.com/sirupsen/logrus"
 )
