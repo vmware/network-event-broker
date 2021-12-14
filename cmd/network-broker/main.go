@@ -1,34 +1,30 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2021 VMware, Inc.
 
-
 package main
 
 import (
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
-	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/listeners"
+	"github.com/network-event-broker/pkg/conf"
 	"github.com/network-event-broker/pkg/network"
+	"github.com/network-event-broker/pkg/system"
 	log "github.com/sirupsen/logrus"
 )
 
-func main() {
-	c, err := conf.Parse()
-	if err != nil {
-		log.Warnf("Failed to parse configuration: %v", err)
-	}
-
+func run(c *conf.Config) {
 	n := network.New()
 	if n == nil {
 		log.Fatalln("Failed to create network. Aborting ...")
 		os.Exit(1)
 	}
 
-	err = network.AcquireLinks(n)
+	err := network.AcquireLinks(n)
 	if err != nil {
 		log.Fatalf("Failed to acquire link information. Unable to continue: %v", err)
 		os.Exit(1)
@@ -56,4 +52,46 @@ func main() {
 	}()
 
 	<-finished
+}
+
+func main() {
+	c, err := conf.Parse()
+	if err != nil {
+		log.Warnf("Failed to parse configuration: %v", err)
+	}
+
+	log.Infof("network-broker: v%s (built %s)", conf.Version, runtime.Version())
+
+	cred, err := system.GetUserCredentials("")
+	if err != nil {
+		log.Warningf("Failed to get current user credentials: %+v", err)
+		os.Exit(1)
+	} else {
+		if cred.Uid == 0 {
+			u, err := system.GetUserCredentials("network-broker")
+			if err != nil {
+				log.Errorf("Failed to get user 'network-broker' credentials: %+v", err)
+				os.Exit(1)
+			} else {
+				if err := system.EnableKeepCapability(); err != nil {
+					log.Warningf("Failed to enable keep capabilities: %+v", err)
+				}
+
+				if err := system.SwitchUser(u); err != nil {
+					log.Warningf("Failed to switch user: %+v", err)
+				}
+
+				if err := system.DisableKeepCapability(); err != nil {
+					log.Warningf("Failed to disable keep capabilities: %+v", err)
+				}
+
+				err := system.ApplyCapability(u)
+				if err != nil {
+					log.Warningf("Failed to apply capabilities: +%v", err)
+				}
+			}
+		}
+	}
+
+	run(c)
 }

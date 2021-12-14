@@ -133,7 +133,6 @@ func acquireLink(link string) (*LinkDescribe, error) {
 		if l.Name == link {
 			return &l, nil
 		}
-
 	}
 
 	return nil, errors.New("not found")
