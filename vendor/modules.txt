@@ -77,6 +77,9 @@ github.com/spf13/pflag
 github.com/spf13/viper
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv
+# github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
+## explicit
+github.com/syndtr/gocapability/capability
 # github.com/vishvananda/netlink v1.1.0
 ## explicit
 github.com/vishvananda/netlink
