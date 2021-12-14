@@ -36,6 +36,12 @@ Environment variables `LINK`, `LINKINDEX=` and DHCP lease information `DHCP_LEAS
 
 ```
 
+Due to security `network-broker` runs in non root user `network-broker`. It drops all privileges except CAP_NET_ADMIN and CAP_SYS_ADMIN.
+
+```bash
+❯  useradd -M -s /usr/bin/nologin network-broker
+```
+
 ### Configuration
 ----
 
