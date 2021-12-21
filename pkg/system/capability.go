@@ -16,12 +16,17 @@ func ApplyCapability(c *syscall.Credential) error {
 		return err
 	}
 
-	caps.Set(capability.CAPS|capability.BOUNDS|capability.AMBIENT, capability.CAP_NET_ADMIN|capability.CAP_SYS_ADMIN)
-	if err := caps.Apply(capability.CAPS | capability.BOUNDS | capability.AMBIENT); err != nil {
-		return err
-	}
+	allCapabilityTypes := capability.CAPS | capability.BOUNDS | capability.AMBS
 
-	return nil
+	caps.Clear(capability.CAPS | capability.BOUNDS | capability.AMBS)
+	caps.Set(capability.BOUNDS, capability.CAP_NET_ADMIN, capability.CAP_SYS_ADMIN)
+	caps.Set(capability.PERMITTED, capability.CAP_NET_ADMIN, capability.CAP_SYS_ADMIN)
+	caps.Set(capability.INHERITABLE, capability.CAP_NET_ADMIN, capability.CAP_SYS_ADMIN)
+	caps.Set(capability.EFFECTIVE, capability.CAP_NET_ADMIN, capability.CAP_SYS_ADMIN)
+
+	caps.Clear(capability.AMBIENT)
+
+	return caps.Apply(allCapabilityTypes)
 }
 
 func EnableKeepCapability() error {
