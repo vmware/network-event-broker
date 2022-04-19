@@ -128,7 +128,7 @@ A boolean. When true, the host name be sent to `systemd-hostnamed` vis DBus. App
 ❯ sudo cat /etc/network-broker/network-broker.toml 
 [System]
 LogLevel="debug"
-Generator="systemd-networks"
+Generator="systemd-networkd"
 
 [Network]
 Links="eth0 eth1"
