@@ -13,11 +13,11 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/network-event-broker/pkg/bus"
-	"github.com/network-event-broker/pkg/conf"
-	"github.com/network-event-broker/pkg/network"
-	"github.com/network-event-broker/pkg/parser"
-	"github.com/network-event-broker/pkg/system"
+	"github.com/vmware/network-event-broker/pkg/bus"
+	"github.com/vmware/network-event-broker/pkg/conf"
+	"github.com/vmware/network-event-broker/pkg/network"
+	"github.com/vmware/network-event-broker/pkg/parser"
+	"github.com/vmware/network-event-broker/pkg/system"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )

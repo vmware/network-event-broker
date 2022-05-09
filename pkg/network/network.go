@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/network-event-broker/pkg/conf"
+	"github.com/vmware/network-event-broker/pkg/conf"
 	log "github.com/sirupsen/logrus"
 )
 

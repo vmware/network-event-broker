@@ -18,13 +18,13 @@ import (
 	"github.com/jaypipes/ghw"
 
 	"github.com/godbus/dbus/v5"
-	"github.com/network-event-broker/pkg/bus"
-	"github.com/network-event-broker/pkg/conf"
-	"github.com/network-event-broker/pkg/configfile"
-	"github.com/network-event-broker/pkg/network"
-	"github.com/network-event-broker/pkg/system"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
+	"github.com/vmware/network-event-broker/pkg/bus"
+	"github.com/vmware/network-event-broker/pkg/conf"
+	"github.com/vmware/network-event-broker/pkg/configfile"
+	"github.com/vmware/network-event-broker/pkg/network"
+	"github.com/vmware/network-event-broker/pkg/system"
 )
 
 const (

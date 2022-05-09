@@ -10,10 +10,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/network-event-broker/listeners"
-	"github.com/network-event-broker/pkg/conf"
-	"github.com/network-event-broker/pkg/network"
-	"github.com/network-event-broker/pkg/system"
+	"github.com/vmware/network-event-broker/listeners"
+	"github.com/vmware/network-event-broker/pkg/conf"
+	"github.com/vmware/network-event-broker/pkg/network"
+	"github.com/vmware/network-event-broker/pkg/system"
 	log "github.com/sirupsen/logrus"
 )
 

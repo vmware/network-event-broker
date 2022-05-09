@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/network-event-broker/pkg/configfile"
+	"github.com/vmware/network-event-broker/pkg/configfile"
 )
 
 func ParseLinkString(ifindex int, key string) (string, error) {
