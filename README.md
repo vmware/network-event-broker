@@ -26,6 +26,10 @@ May 14 17:08:13 Zeus cat[273185]: LINK=ens33
 
 Environment variables `LINK`, `LINKINDEX=` and DHCP lease information `DHCP_LEASE=`  passed to the scripts.
 
+#### How can I make my secondary network interface work ?
+
+ When both interfaces are in same subnet and we have only one routing table with one GW, ie. traffic that reach via eth2 tries to leave via eth0(primary interface) which it can't. So we need to add a secondary routing table and routing policy so that the secondary interface uses the new custom routing table. Incase of static address the address and the routes already know. Incase of DHCP it's not prodictable. `network-event-broker` automatically configures the routing policy rules via ```RoutingPolicyRules=```. 
+
 #### Building from source
 ----
 
