@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jaypipes/ghw"
-
 	"github.com/godbus/dbus/v5"
+	"github.com/jaypipes/ghw"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
+
 	"github.com/vmware/network-event-broker/pkg/bus"
 	"github.com/vmware/network-event-broker/pkg/conf"
 	"github.com/vmware/network-event-broker/pkg/configfile"
@@ -155,19 +155,21 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string,
 				continue
 			}
 
+			if len(scripts) <= 0 {
+				log.Debugf("No script in '%+v'", d)
+				continue
+			}
+
 			path.Join(conf.ConfPath, d)
 			linkNameEnvArg := "LINK=" + link
 			linkIndexEnvArg := "LINKINDEX=" + strconv.Itoa(index)
 			linkStateEnvArg := k + "=" + v
 
-			if len(scripts) <= 0 {
-				continue
-			}
-
 			leaseFile := path.Join(conf.NetworkdLeasePath, strconv.Itoa(index))
 			leaseLines, err := system.ReadLines(leaseFile)
 			if err != nil {
 				log.Debugf("Failed to read lease file of link='%+v'", link, err)
+				continue
 			}
 
 			var leaseArg string
@@ -223,8 +225,8 @@ func executeNetworkdManagerScripts(k string, v string) error {
 
 	scripts, err := system.ReadAllScriptInConfDir(managerStatePath)
 	if err != nil {
-		log.Errorf("Failed to read script dir '%s'", managerStatePath)
-		return nil
+		log.Errorf("Failed to read script dir '%s': %+v", managerStatePath, err)
+		return err
 	}
 
 	for _, s := range scripts {
@@ -297,7 +299,7 @@ func processDBusManagerMessage(n *network.Network, v *dbus.Signal) error {
 	for k, v := range state {
 		s := strings.Trim(v.String(), "\"")
 
-		log.Debugf("Manager chaged state '%v='%v'", k, s)
+		log.Debugf("Manager changed state '%v='%v'", k, s)
 
 		executeNetworkdManagerScripts(k, s)
 	}
@@ -324,7 +326,7 @@ func WatchNetworkd(n *network.Network, c *conf.Config, finished chan bool) error
 		return err
 	}
 
-	log.Infoln("Listening to systemd-networkd DBus events")
+	log.Infoln("Listening to 'systemd-networkd' DBus events")
 
 	sigChannel := make(chan *dbus.Signal, 512)
 	conn.Signal(sigChannel)
@@ -333,18 +335,17 @@ func WatchNetworkd(n *network.Network, c *conf.Config, finished chan bool) error
 		w := fmt.Sprintf("%v", v.Body[0])
 
 		if strings.HasPrefix(w, networkInterfaceLink) {
-			log.Debugf("Received Link DBus signal from systemd-networkd'")
+			log.Debugf("Received Link DBus signal from 'systemd-networkd'")
 
 			go processDBusLinkMessage(n, v, c)
 
 		} else if strings.HasPrefix(w, "org.freedesktop.network1.Manager") {
-			log.Debugf("Received Manager DBus signal from systemd-networkd'")
+			log.Debugf("Received Manager DBus signal from 'systemd-networkd'")
 
 			go processDBusManagerMessage(n, v)
 		}
 	}
 
 	finished <- true
-
 	return nil
 }
