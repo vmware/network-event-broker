@@ -32,6 +32,7 @@ const (
 	defaultRequestTimeout = 5 * time.Second
 )
 
+
 func executeNetworkdLinkStateScripts(link string, index int, k string, v string, c *conf.Config) error {
 	scriptDirs, err := system.ReadAllScriptDirs(conf.ConfPath)
 	if err != nil {
@@ -79,7 +80,7 @@ func executeNetworkdLinkStateScripts(link string, index int, k string, v string,
 					j, _ := json.Marshal(m)
 					jsonData = "JSON=" + string(j)
 
-					log.Debugf("JSON : %v\n", jsonData)
+					log.Debugf("JSON: %v", jsonData)
 				}
 			}
 

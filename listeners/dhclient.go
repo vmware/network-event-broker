@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2022 VMware, Inc.
 
-
 package listeners
 
 import (
+	"encoding/json"
 	"net"
 	"os"
 	"os/exec"
@@ -13,13 +13,14 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
+
 	"github.com/vmware/network-event-broker/pkg/bus"
 	"github.com/vmware/network-event-broker/pkg/conf"
 	"github.com/vmware/network-event-broker/pkg/network"
 	"github.com/vmware/network-event-broker/pkg/parser"
 	"github.com/vmware/network-event-broker/pkg/system"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/sys/unix"
 )
 
 func setDnsServer(dnsServers []net.IP, index int) error {
@@ -54,12 +55,31 @@ func setDnsDomain(dnsDomains []string, index int) error {
 	return nil
 }
 
-func executeDHClientLinkStateScripts(n *network.Network, link string, strIndex string, lease string) error {
+func executeDHClientLinkStateScripts(n *network.Network, link string, strIndex string, dns string, domain string, lease string, c *conf.Config) error {
 	scripts, err := system.ReadAllScriptInConfDir(path.Join(conf.ConfPath, "routable.d"))
 	if err != nil {
 		log.Errorf("Failed to read script dir: %+v", err)
 		return err
 	}
+
+	var jsonData string
+	if c.Network.EmitJSON {
+		m, err := acquireLink(link)
+		if err == nil {
+			m.DNS = []string{dns}
+			m.Domains = []string{domain}
+
+			j, _ := json.Marshal(m)
+			jsonData = "JSON=" + string(j)
+
+			log.Debugf("JSON: %+v", jsonData)
+		}
+	}
+
+	link = "LINK=" + link
+	strIndex = "LINKINDEX=" + strIndex
+	dns = "DNS=" + dns
+	domain = "DOMAIN=" + domain
 
 	for _, s := range scripts {
 		script := path.Join(conf.ConfPath, "routable.d", s)
@@ -72,7 +92,13 @@ func executeDHClientLinkStateScripts(n *network.Network, link string, strIndex s
 			link,
 			strIndex,
 			lease,
+			dns,
+			domain,
 		)
+
+		if c.Network.EmitJSON {
+			cmd.Env = append(cmd.Env, jsonData)
+		}
 
 		if err := cmd.Run(); err != nil {
 			log.Errorf("Failed to execute script='%s': %w", script, err)
@@ -100,20 +126,18 @@ func TaskDHClient(n *network.Network, c *conf.Config) error {
 		idx := n.LinksByName[i]
 		if c.Network.Links != "" {
 			if !strings.Contains(c.Network.Links, n.LinksByIndex[idx]) {
-				return nil
+				continue
 			}
 		}
 
 		strIndex := strconv.Itoa(idx)
 
-		link := "LINK=" + i
-		index := "LINKINDEX=" + strIndex
 		dns := strings.Join(lease.Dns, ",")
 		domain := strings.Join(lease.Domain, ",")
 		strings.Join(lease.Domain, ",")
 		dhcpLease := "DHCP_LEASE=" + "ADDRESS=" + lease.Address + ",DNS=" + strings.Join(lease.Dns, ",") + ",ROUTER=" + lease.Routers + ",SUBNETMASK=" + lease.SubnetMask + ",DNS=" + dns + ",DOMAIN=" + domain
 
-		executeDHClientLinkStateScripts(n, link, index, dhcpLease)
+		executeDHClientLinkStateScripts(n, i, strIndex, dns, domain, dhcpLease, c)
 
 		if c.Network.UseHostname {
 			if err := bus.SetHostname(lease.Hostname); err != nil {
