@@ -37,6 +37,29 @@ const (
 	defaultRequestTimeout = 5 * time.Second
 )
 
+type Route struct {
+	Scope int `json:"Scope"`
+	Dst   struct {
+		IP   string `json:"IP"`
+		Mask int    `json:"Mask"`
+	} `json:"Dst"`
+	Src       string   `json:"Src"`
+	Gw        string   `json:"Gw"`
+	MultiPath string   `json:"MultiPath"`
+	Protocol  int      `json:"Protocol"`
+	Priority  int      `json:"Priority"`
+	Table     int      `json:"Table"`
+	Type      int      `json:"Type"`
+	Tos       int      `json:"Tos"`
+	Flags     []string `json:"Flags"`
+	MPLSDst   string   `json:"MPLSDst"`
+	NewDst    string   `json:"NewDst"`
+	Encap     string   `json:"Encap"`
+	Mtu       int      `json:"MTU"`
+	AdvMSS    int      `json:"AdvMSS"`
+	Hoplimit  int      `json:"Hoplimit"`
+}
+
 type Address struct {
 	IP          string `json:"IP"`
 	Mask        int    `json:"Mask"`
@@ -97,6 +120,7 @@ type LinkDescribe struct {
 	SetupState       string   `json:"SetupState"`
 	Type             string   `json:"Type"`
 	Vendor           string   `json:"Vendor"`
+	ProductID        string   `json:"ProductID"`
 	Manufacturer     string   `json:"Manufacturer"`
 	NetworkFile      string   `json:"NetworkFile,omitempty"`
 	DNS              []string `json:"DNS"`
@@ -104,10 +128,44 @@ type LinkDescribe struct {
 	NTP              []string `json:"NTP"`
 
 	Addresses []Address `json:"Address"`
+	Routes    []Route   `json:"Routes"`
 }
 
 type LinksDescribe struct {
 	Interfaces []LinkDescribe
+}
+
+func fillOneRoute(rt *netlink.Route) Route {
+	route := Route{
+		Scope:    int(rt.Scope),
+		Protocol: rt.Protocol,
+		Priority: rt.Priority,
+		Table:    rt.Table,
+		Type:     rt.Type,
+		Tos:      rt.Tos,
+		Mtu:      rt.MTU,
+		AdvMSS:   rt.AdvMSS,
+		Hoplimit: rt.Hoplimit,
+	}
+
+	if rt.Gw != nil {
+		route.Gw = rt.Gw.String()
+	}
+
+	if rt.Src != nil {
+		route.Src = rt.Src.String()
+	}
+
+	if rt.Dst != nil {
+		route.Dst.IP = rt.Dst.IP.String()
+		route.Dst.Mask, _ = rt.Dst.Mask.Size()
+	}
+
+	if rt.Flags != 0 {
+		route.Flags = rt.ListFlags()
+	}
+
+	return route
 }
 
 func fillOneAddress(a *netlink.Addr) Address {
@@ -179,6 +237,19 @@ func fillOneLink(link netlink.Link) *LinkDescribe {
 		l.Addresses = append(l.Addresses, fillOneAddress(&a))
 	}
 
+	routes, err := netlink.RouteList(nil, netlink.FAMILY_ALL)
+	if err != nil {
+		return nil
+	}
+
+	for _, rt := range routes {
+		if rt.LinkIndex != link.Attrs().Index {
+			continue
+		}
+
+		l.Routes = append(l.Routes, fillOneRoute(&rt))
+	}
+
 	c, err := configfile.ParseKeyFromSectionString(path.Join("/sys/class/net", link.Attrs().Name, "device/uevent"), "", "PCI_SLOT_NAME")
 	if err == nil {
 		pci, err := ghw.PCI()
@@ -188,6 +259,8 @@ func fillOneLink(link netlink.Link) *LinkDescribe {
 			l.Model = dev.Product.Name
 			l.Vendor = dev.Vendor.Name
 			l.Path = "pci-" + dev.Address
+			l.Driver = dev.Driver
+			l.ProductID = dev.Product.ID
 		}
 	}
 
