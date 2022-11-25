@@ -33,8 +33,8 @@ build:
 install:
 	install bin/network-broker /usr/bin/
 	install -vdm 755 /etc/network-broker
-	install -m 755 conf/network-broker.toml /etc/network-broker
-	install -m 0644 units/network-broker.service /lib/systemd/system/
+	install -m 755  distribution/network-broker.toml /etc/network-broker
+	install -m 0644 distribution/network-broker.service /lib/systemd/system/
 	systemctl daemon-reload
 
 PHONY: clean
