@@ -41,6 +41,18 @@ func ParseIP(ip string) (net.IP, error) {
     return a, nil
 }
 
+func IP4or6(ip string) string {
+    a := net.ParseIP(ip)
+
+    if a.To4() != nil {
+        return "IPv4"
+    } else if a.To16() != nil {
+        return  "IPv6"
+    }
+
+    return "unknown"
+}
+
 func ParseDHClientLease() (map[string]*Lease, error) {
     file, err := os.OpenFile(conf.DHClientLeaseFile, os.O_RDONLY, os.ModePerm)
     if err != nil {
