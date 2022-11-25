@@ -24,6 +24,7 @@ import (
 	"github.com/vmware/network-event-broker/pkg/conf"
 	"github.com/vmware/network-event-broker/pkg/configfile"
 	"github.com/vmware/network-event-broker/pkg/network"
+	"github.com/vmware/network-event-broker/pkg/parser"
 	"github.com/vmware/network-event-broker/pkg/system"
 )
 
@@ -62,6 +63,7 @@ type Route struct {
 
 type Address struct {
 	IP          string `json:"IP"`
+	Family      string   `json:"Family"`
 	Mask        int    `json:"Mask"`
 	Label       string `json:"Label"`
 	Flags       int    `json:"Flags"`
@@ -177,6 +179,8 @@ func fillOneAddress(a *netlink.Addr) Address {
 		PreferedLft: a.PreferedLft,
 		ValidLft:    a.ValidLft,
 	}
+
+	addr.Family = parser.IP4or6(a.IP.String())
 
 	addr.Mask, _ = a.Mask.Size()
 	if a.Peer != nil {
