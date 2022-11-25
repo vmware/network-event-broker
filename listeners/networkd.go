@@ -37,6 +37,18 @@ const (
 	defaultRequestTimeout = 5 * time.Second
 )
 
+type Address struct {
+	IP          string `json:"IP"`
+	Mask        int    `json:"Mask"`
+	Label       string `json:"Label"`
+	Flags       int    `json:"Flags"`
+	Scope       int    `json:"Scope"`
+	Peer        string `json:"Peer"`
+	Broadcast   string `json:"Broadcast"`
+	PreferedLft int    `json:"PreferedLft"`
+	ValidLft    int    `json:"ValidLft"`
+}
+
 type LinkDescribe struct {
 	Index            int                     `json:"Index"`
 	Mtu              int                     `json:"MTU"`
@@ -59,17 +71,16 @@ type LinkDescribe struct {
 		Flags    int  `json:"Flags"`
 		ProgID   int  `json:"ProgId"`
 	} `json:"Xdp"`
-	EncapType   string `json:"EncapType"`
-	Protinfo    string `json:"Protinfo"`
-	OperState   string `json:"OperState"`
-	NetNsID     int    `json:"NetNsID"`
-	NumTxQueues int    `json:"NumTxQueues"`
-	NumRxQueues int    `json:"NumRxQueues"`
-	GSOMaxSize  uint32 `json:"GSOMaxSize"`
-	GSOMaxSegs  uint32 `json:"GSOMaxSegs"`
-	Group       uint32 `json:"Group"`
-	Slave       string `json:"Slave"`
-
+	EncapType       string `json:"EncapType"`
+	Protinfo        string `json:"Protinfo"`
+	OperState       string `json:"OperState"`
+	NetNsID         int    `json:"NetNsID"`
+	NumTxQueues     int    `json:"NumTxQueues"`
+	NumRxQueues     int    `json:"NumRxQueues"`
+	GSOMaxSize      uint32 `json:"GSOMaxSize"`
+	GSOMaxSegs      uint32 `json:"GSOMaxSegs"`
+	Group           uint32 `json:"Group"`
+	Slave           string `json:"Slave"`
 	KernelOperState string `json: "KernelOperState"`
 
 	AddressState     string `json:"AddressState"`
@@ -91,15 +102,38 @@ type LinkDescribe struct {
 	DNS              []string `json:"DNS"`
 	Domains          []string `json:"Domains"`
 	NTP              []string `json:"NTP"`
+
+	Addresses []Address `json:"Address"`
 }
 
 type LinksDescribe struct {
 	Interfaces []LinkDescribe
 }
 
+func fillOneAddress(a *netlink.Addr) Address {
+	addr := Address{
+		IP:          a.IP.String(),
+		Label:       a.Label,
+		Scope:       a.Scope,
+		Flags:       a.Flags,
+		PreferedLft: a.PreferedLft,
+		ValidLft:    a.ValidLft,
+	}
+
+	addr.Mask, _ = a.Mask.Size()
+	if a.Peer != nil {
+		addr.Peer = a.Peer.String()
+	}
+
+	if a.Broadcast != nil {
+		addr.Broadcast = a.Broadcast.String()
+	}
+
+	return addr
+}
+
 func fillOneLink(link netlink.Link) *LinkDescribe {
 	l := LinkDescribe{
-
 		Type:            link.Attrs().EncapType,
 		KernelOperState: link.Attrs().OperState.String(),
 		Index:           link.Attrs().Index,
@@ -135,6 +169,15 @@ func fillOneLink(link netlink.Link) *LinkDescribe {
 	l.DNS, _ = ParseLinkDNS(link.Attrs().Index)
 	l.Domains, _ = ParseLinkDomains(link.Attrs().Index)
 	l.NTP, _ = ParseLinkNTP(link.Attrs().Index)
+
+	addrs, err := netlink.AddrList(link, netlink.FAMILY_ALL)
+	if err != nil {
+		return &l
+	}
+
+	for _, a := range addrs {
+		l.Addresses = append(l.Addresses, fillOneAddress(&a))
+	}
 
 	c, err := configfile.ParseKeyFromSectionString(path.Join("/sys/class/net", link.Attrs().Name, "device/uevent"), "", "PCI_SLOT_NAME")
 	if err == nil {
