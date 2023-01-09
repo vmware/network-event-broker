@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2022 VMware, Inc.
+// Copyright 2023 VMware, Inc.
 
 package listeners
 
@@ -105,6 +105,7 @@ type LinkDescribe struct {
 	NetworkFile      string   `json:"NetworkFile,omitempty"`
 	DNS              []string `json:"DNS"`
 	Domains          []string `json:"Domains"`
+	DomainSearch     []string `json:"DomainSearch"`
 	NTP              []string `json:"NTP"`
 
 	Addresses []Address `json:"Address"`
