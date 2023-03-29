@@ -32,7 +32,6 @@ const (
 	defaultRequestTimeout = 5 * time.Second
 )
 
-
 func executeNetworkdLinkStateScripts(link string, index int, k string, v string, c *conf.Config) error {
 	scriptDirs, err := system.ReadAllScriptDirs(conf.ConfPath)
 	if err != nil {
@@ -165,6 +164,7 @@ func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) 
 	for k, v := range linkState {
 		switch k {
 		case "OperationalState":
+		case "AdministrativeState":
 			{
 				s := strings.Trim(v.String(), "\"")
 
