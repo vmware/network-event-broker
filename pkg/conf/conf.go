@@ -20,7 +20,8 @@ const (
 	DHClientLeaseFile = "/var/lib/dhclient/dhclient.leases"
 	NetworkdLeasePath = "/run/systemd/netif/leases"
 
-	ManagerStateDir = "manager.d"
+	ManagerStateDir   = "manager.d"
+	RoutesModifiedDir = "routes.d"
 
 	ROUTE_TABLE_BASE = 9999
 
@@ -49,16 +50,17 @@ type Config struct {
 }
 
 func createEventScriptDirs() error {
-	var linkEventStateDirs [6]string
+	var eventStateDirs [7]string
 
-	linkEventStateDirs[0] = "no-carrier.d"
-	linkEventStateDirs[1] = "carrier.d"
-	linkEventStateDirs[2] = "degraded.d"
-	linkEventStateDirs[3] = "routable.d"
-	linkEventStateDirs[4] = "configured.d"
-	linkEventStateDirs[5] = ManagerStateDir
+	eventStateDirs[0] = "no-carrier.d"
+	eventStateDirs[1] = "carrier.d"
+	eventStateDirs[2] = "degraded.d"
+	eventStateDirs[3] = "routable.d"
+	eventStateDirs[4] = "configured.d"
+	eventStateDirs[5] = ManagerStateDir
+	eventStateDirs[6] = RoutesModifiedDir
 
-	for _, d := range linkEventStateDirs {
+	for _, d := range eventStateDirs {
 		os.MkdirAll(path.Join(ConfPath, d), 0755)
 	}
 
