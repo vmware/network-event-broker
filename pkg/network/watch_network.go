@@ -4,12 +4,15 @@
 package network
 
 import (
+	"net"
 	"strconv"
 	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
+
+	"github.com/vmware/network-event-broker/pkg/system"
 )
 
 const (
@@ -18,6 +21,7 @@ const (
 
 func WatchNetwork(n *Network) {
 	go n.watchAddresses()
+	go n.watchRoutes()
 	go n.watchLinks()
 }
 
@@ -64,6 +68,30 @@ func (n *Network) watchAddresses() {
 
 				n.dropConfiguration(updates.LinkIndex, ip)
 			}
+		}
+	}
+}
+
+func (n *Network) watchRoutes() {
+	updates := make(chan netlink.RouteUpdate)
+	done := make(chan struct{}, MaxChannelSize)
+	if err := netlink.RouteSubscribe(updates, done); err != nil {
+		log.Errorf("can't subscribe route change event: %v", err)
+	}
+
+	for {
+		select {
+		case <-done:
+			log.Infoln("route watcher failed")
+		case updates, ok := <-updates:
+			if !ok {
+				break
+			}
+
+			log.Debugf("Received route update: %v", updates)
+
+			link, _ := net.InterfaceByIndex(updates.LinkIndex)
+			system.ExecuteScripts(link.Name, updates.LinkIndex)
 		}
 	}
 }
