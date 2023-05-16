@@ -6,7 +6,13 @@ A daemon configures network and executes scripts on network events such as `syst
 1. An address getting added/removed/modified.
 2. Links added/removed.
 
-```network-event-broker``` creates link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` and manager state dir ```manager.d``` in ```/etc/network-event-broker```. Executable scripts can be placed into directories.
+```network-event-broker``` creates 
+
+- link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` 
+-  manager state dir ```manager.d``` 
+-  `routes.d` (when routes gets modfied)
+ 
+in ```/etc/network-event-broker```. Executable scripts can be placed into directories.
 
 Use cases:
 
