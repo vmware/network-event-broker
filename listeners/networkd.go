@@ -162,26 +162,20 @@ func processDBusLinkMessage(n *network.Network, v *dbus.Signal, c *conf.Config) 
 
 	linkState := v.Body[1].(map[string]dbus.Variant)
 	for k, v := range linkState {
-		switch k {
-		case "OperationalState":
-		case "AdministrativeState":
-			{
-				s := strings.Trim(v.String(), "\"")
+		s := strings.Trim(v.String(), "\"")
 
-				log.Debugf("Link='%s' ifindex='%d' changed state '%s'='%s'", n.LinksByIndex[index], index, k, s)
+		log.Debugf("Link='%s' ifindex='%d' changed state '%s'='%s'", n.LinksByIndex[index], index, k, s)
 
-				if c.Network.Links != "" {
-					if strings.Contains(c.Network.Links, n.LinksByIndex[index]) {
-						executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s, c)
-					}
-				} else {
-					executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s, c)
-				}
-
-				if s == "routable" && strings.Contains(c.Network.RoutingPolicyRules, n.LinksByIndex[index]) {
-					network.ConfigureNetwork(n.LinksByIndex[index], n)
-				}
+		if c.Network.Links != "" {
+			if strings.Contains(c.Network.Links, n.LinksByIndex[index]) {
+				executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s, c)
 			}
+		} else {
+			executeNetworkdLinkStateScripts(n.LinksByIndex[index], index, k, s, c)
+		}
+
+		if s == "routable" && strings.Contains(c.Network.RoutingPolicyRules, n.LinksByIndex[index]) {
+			network.ConfigureNetwork(n.LinksByIndex[index], n)
 		}
 	}
 
