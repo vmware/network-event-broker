@@ -309,7 +309,7 @@ Generator="systemd-networkd"
 
 [Network]
 Links="eth0 eth1"
-RoutingPolicyRules="eth0 eth1"
+RoutingPolicyRules="eth1"
 UseDNS="true"
 UseDomain="true"
 EmitJSON="true"
