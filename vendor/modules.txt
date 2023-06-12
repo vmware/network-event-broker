@@ -29,7 +29,7 @@ github.com/hashicorp/hcl/hcl/token
 github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/jaypipes/ghw v0.10.0
+# github.com/jaypipes/ghw v0.11.0
 ## explicit; go 1.18
 github.com/jaypipes/ghw
 github.com/jaypipes/ghw/pkg/baseboard
