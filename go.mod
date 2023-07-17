@@ -6,7 +6,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-ini/ini v1.67.0
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/jaypipes/ghw v0.11.0
+	github.com/jaypipes/ghw v0.12.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.16.0
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
