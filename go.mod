@@ -3,7 +3,7 @@ module github.com/vmware/network-event-broker
 go 1.20
 
 require (
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-ini/ini v1.67.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/jaypipes/ghw v0.12.0
