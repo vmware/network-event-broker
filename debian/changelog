@@ -1,0 +1,5 @@
+network-event-broker (0.3.1+ds-1) UNRELEASED; urgency=medium
+
+  * Initial release (Closes: #1060439)
+
+ -- Tobias Schaffner <tobias.schaffner@siemens.com>  Fri, 08 Dec 2023 14:48:32 +0100
