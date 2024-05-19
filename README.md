@@ -11,6 +11,18 @@ A daemon configures network and executes scripts on network events such as `syst
 - link state directories ```carrier.d```,  ```configured.d```,  ```degraded.d```  ```no-carrier.d```  ```routable.d``` 
 -  manager state dir ```manager.d``` 
 -  `routes.d` (when routes gets modfied)
+
+```bash
+╭─root@Zeus1 /etc  
+╰─➤  tree network-broker 
+network-broker
+├── carrier.d
+├── configured.d
+├── degraded.d
+├── manager.d
+├── network-broker.toml
+├── no-carrier.d
+```
  
 in ```/etc/network-event-broker```. Executable scripts can be placed into directories.
 
