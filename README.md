@@ -24,7 +24,7 @@ network-broker
 ├── no-carrier.d
 ```
  
-in ```/etc/network-event-broker```. Executable scripts can be placed into directories.
+in ```/etc/network-broker```. Executable scripts can be placed into directories.
 
 Use cases:
 
