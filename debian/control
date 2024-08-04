@@ -1,0 +1,38 @@
+Source: network-event-broker
+Maintainer: Debian Go Packaging Team <team+pkg-go@tracker.debian.org>
+Uploaders: Tobias Schaffner <tobias.schaffner@siemens.com>
+Section: golang
+Testsuite: autopkgtest-pkg-go
+Priority: optional
+Build-Depends: debhelper-compat (= 13),
+               dh-golang,
+               dh-sysuser,
+               golang-any,
+               golang-github-fsnotify-fsnotify-dev,
+               golang-github-go-ini-ini-dev,
+	       golang-github-godbus-dbus-dev,
+               golang-github-sirupsen-logrus-dev
+               golang-github-spf13-viper-dev,
+               golang-github-vishvananda-netlink-dev,
+               golang-gocapability-dev,
+               golang-golang-x-sys-dev,
+Standards-Version: 4.6.2
+Vcs-Browser: https://salsa.debian.org/go-team/packages/network-event-broker
+Vcs-Git: https://salsa.debian.org/go-team/packages/network-event-broker.git
+Homepage: https://github.com/vmware/network-event-broker
+Rules-Requires-Root: no
+XS-Go-Import-Path: github.com/vmware/network-event-broker
+
+Package: network-event-broker
+Architecture: any
+Depends: systemd,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Built-Using: ${misc:Built-Using}
+Description: run scripts on systemd network events
+
+ The network-event-broker is a daemon that configures network interfaces
+ and executes scripts based on network events such as address changes and
+ link additions/removals. It also enables the configuration of multiple
+ interfaces in the same network by automatically adding a secondary routing
+ table and routing policies.
